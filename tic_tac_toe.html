@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Project: Memory Game</title>
+    <meta charset="utf-8" />
+    <style>
+h1 {
+ text-align: center;
+}
+td {
+ width: 100px;
+ height: 100px;
+}
+table {
+ margin: 5px auto;
+}
+.vert {
+ border-left: 2px solid rgb(18, 75, 206);
+ border-right: 2px solid rgb(18, 75, 206);
+}
+.hori {
+ border-top: 2px solid rgb(18, 75, 206);
+ border-bottom: 2px solid rgb(18, 75, 206);
+}    
+    </style>
+    <script type="text/javascript">
+var TicTacToeGame = function () {
+  this.players = [];
+  this.currentPlayerIndex = 0;
+};
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+var Player = function (name, letter, image) {
+  this.name = name;
+  this.letter = {
+    letter,
+    image,
+  };
+};
+TicTacToeGame.prototype.isGameOver = function () {
+  for (var i = 1; i <= 3; i++) {
+    // console.log(document.getElementById('image_' + (i + 1) + '_' + 1))
+    //Checking the rows
+    console.log(i);
+    if (
+      getElement('image_' + i + '_' + 1).src ==
+        getElement('image_' + i + '_' + 2).src &&
+      getElement('image_' + i + '_' + 1).src ==
+        getElement('image_' + i + '_' + 3).src &&
+      getElement('image_' + i + '_' + 1).src !=
+        'https://www.transparenttextures.com/patterns/asfalt-light.png'
+    ) {
+      return true;
+    }
+  }
+  //Nanna I know that instead of the variable j that I am using below I could use i and redifine it, I just wanted it to be more simple for me
+  //Chcking the cols
+  for (var j = 1; j <= 3; j++) {
+    if (
+      getElement('image_' + 1 + '_' + j).src ==
+        getElement('image_' + 2 + '_' + j).src &&
+      getElement('image_' + 1 + '_' + j).src ==
+        getElement('image_' + 3 + '_' + j).src &&
+      getElement('image_' + 1 + '_' + j).src !=
+        'https://www.transparenttextures.com/patterns/asfalt-light.png'
+    ) {
+      return true;
+    }
+  }
+  if (
+    getElement('image_' + 1 + '_' + 1).src ==
+      getElement('image_' + 2 + '_' + 2).src &&
+    getElement('image_' + 1 + '_' + 1).src ==
+      getElement('image_' + 3 + '_' + 3).src &&
+    getElement('image_' + 1 + '_' + 1).src !=
+      'https://www.transparenttextures.com/patterns/asfalt-light.png'
+  ) {
+    return true;
+  } else if (
+    getElement('image_' + 1 + '_' + 3).src ==
+      getElement('image_' + 2 + '_' + 2).src &&
+    getElement('image_' + 1 + '_' + 3).src ==
+      getElement('image_' + 3 + '_' + 1).src &&
+    getElement('image_' + 1 + '_' + 3).src !=
+      'https://www.transparenttextures.com/patterns/asfalt-light.png'
+  ) {
+    return true;
+  }
+  return false;
+};
+
+TicTacToeGame.prototype.setOnClick = function (elementID) {
+  var playerWhoWon = this.players[0];
+  var mygame = this;
+  var element = document.getElementById(elementID);
+  var mygame = this;
+  element.onclick = async function () {
+    this.setAttribute(
+      'src',
+      mygame.players[mygame.currentPlayerIndex].letter.image
+    );
+    if (mygame.isGameOver()) {
+      await sleep(2000);
+      alert(
+        mygame.players[mygame.currentPlayerIndex].name +
+          ' won, congratulations!'
+      );
+      var newGame = prompt('Do you want to start a new game?');
+      if (newGame == 'Yes' || newGame == 'yes') {
+        resetGame();
+      } else {
+        endGame();
+      }
+    }
+
+    mygame.currentPlayerIndex++;
+    if (mygame.currentPlayerIndex == mygame.players.length) {
+      mygame.currentPlayerIndex = 0;
+    }
+    document.getElementById('currentPlayerSpan').innerHTML =
+      mygame.players[mygame.currentPlayerIndex].name;
+    this.onclick = null;
+  };
+  document.getElementById('currentPlayerSpan').innerHTML =
+    mygame.players[mygame.currentPlayerIndex].name;
+};
+var getElement = function (elementId) {
+  var value = document.getElementById(elementId);
+  return value;
+};
+var showElement = function (elementId) {
+  document.getElementById(elementId).style = 'display: block';
+};
+var hideElement = function (elementId) {
+  document.getElementById(elementId).style = 'display: none';
+};
+var hideClass = function (className) {
+  document.getElementsByClassName(className).style = 'display: none';
+};
+var showClass = function (className) {
+  document.getElementsByClassName(className).style = 'display: block';
+};
+TicTacToeGame.prototype.addPlayer = function (name, letter, image) {
+  var newPlayer = new Player(name, letter, image);
+  this.players.push(newPlayer);
+};
+var endGame = function () {
+  hideElement('gameSection');
+  hideElement('heading');
+  showElement('addPlayersSection');
+};
+TicTacToeGame.prototype.startGame = function () {
+  for (var i = 1; i <= 3; i++) {
+    for (var j = 1; j <= 3; j++) {
+      this.setOnClick('image_' + i + '_' + j);
+    }
+  }
+};
+TicTacToeGame.prototype.showPlayerTurn = function () {
+  document.getElementById('currentPlayerSpan').innerText = this.players[
+    this.currentPlayerIndex
+  ].name;
+};
+var resetGame = function () {
+  for (var i = 1; i <= 3; i++) {
+    for (var j = 1; j <= 3; j++) {
+      var element = document.getElementById('image_' + i + '_' + j);
+      element.src =
+        'https://www.transparenttextures.com/patterns/asfalt-light.png';
+    }
+  }
+  setUpGame();
+};
+var setUpGame = function () {
+  var ticTacToeGame = new TicTacToeGame();
+  var player1 = document.getElementById('player1').value;
+  var player2 = document.getElementById('player2').value;
+  if (player1 != '' && player2 != '') {
+    ticTacToeGame.addPlayer(
+      player1,
+      'X',
+      'https://f0.pngfuel.com/png/482/392/black-x-mark-clip-art-png-clip-art.png'
+    );
+    ticTacToeGame.addPlayer(
+      player2,
+      'O',
+      'https://appstickers-cdn.appadvice.com/1156379709/818975071/f94c2e25b650c0ee24dcaaf5b45462a1-2.png'
+    );
+    showElement('stopGame');
+    ticTacToeGame.showPlayerTurn();
+    showElement('heading');
+    hideElement('addPlayersSection');
+    showElement('gameSection');
+    ticTacToeGame.startGame();
+  } else {
+    alert('Please enter player name(s)');
+  }
+};    
+    </script>
+  </head>
+  <body>
+<div id="heading" style="display:none">
+<h1 style="color:purple">Tic Tac Toe</h1>
+   <h2 style="color:red;">
+      Current player: <span id="currentPlayerSpan"></span>
+      <br />
+      </h2>
+</div>
+<div id="addPlayersSection">
+ <h2 style="color:blue">
+ Player 1: <input type="text" id="player1" />
+ <br />
+ Player 2: <input type="text" id="player2" />
+ <br />
+ <!-- Player 3: <input type="text" id="player3" />
+    <br /> -->
+ <br />
+ <input type="button" value="Start Game" onclick="setUpGame()" />
+ </h2>
+</div>
+<div id="stopGame" style="display:none">
+   <input type="button" value="Quit Game" onclick="endGame()" />
+    <input type="button" value="Reset Game" onclick="resetGame()" />
+</div>
+<div id="gameSection" style="display:none">
+ <table>
+   <tr>
+     <td>
+       <img
+         src="https://www.transparenttextures.com/patterns/asfalt-light.png"
+         width="90"
+         id="image_1_1"
+       />
+     </td>
+     <td class="vert">
+       <img
+         src="https://www.transparenttextures.com/patterns/asfalt-light.png"
+         width="90"
+         id="image_1_2"
+       />
+     </td>
+     <td>
+       <img
+         src="https://www.transparenttextures.com/patterns/asfalt-light.png"
+         width="90"
+         id="image_1_3"
+       />
+     </td>
+   </tr>
+   <tr>
+     <td class="hori">
+       <img
+         src="https://www.transparenttextures.com/patterns/asfalt-light.png"
+         width="90"
+         id="image_2_1"
+       />
+     </td>
+     <td class="vert hori">
+       <img
+         src="https://www.transparenttextures.com/patterns/asfalt-light.png"
+         width="90"
+         id="image_2_2"
+       />
+     </td>
+     <td class="hori">
+       <img
+         src="https://www.transparenttextures.com/patterns/asfalt-light.png"
+         width="90"
+         id="image_2_3"
+       />
+     </td>
+   </tr>
+   <tr>
+     <td>
+       <img
+         src="https://www.transparenttextures.com/patterns/asfalt-light.png"
+         width="90"
+         id="image_3_1"
+       />
+     </td>
+     <td class="vert">
+       <img
+         src="https://www.transparenttextures.com/patterns/asfalt-light.png"
+         width="90"
+         id="image_3_2"
+       />
+     </td>
+     <td>
+       <img
+         src="https://www.transparenttextures.com/patterns/asfalt-light.png"
+         width="90"
+         id="image_3_3"
+       />
+     </td>
+   </tr>
+ </table>
+</div>  
+  </body>
+</html>  
