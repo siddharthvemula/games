@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Project: Memory Game</title>
+    <meta charset="utf-8" />
+    <style>
+body {
+  background: white; /* try type yellow */
+  color: #323232;
+
+  margin: 0;
+  height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  font-family: Helvetica neue, roboto;
+}    
+    </style>
+    <script type="text/javascript">
+function sleep(ms) {
+ return new Promise(resolve => setTimeout(resolve, ms));
+}
+ 
+function shuffle(arr) {
+ let counter = arr.length;
+ 
+ // While there are elements in the arr
+ while (counter > 0) {
+   // Pick a random index
+   let index = Math.floor(Math.random() * counter);
+ 
+   // Decrease counter by 1
+   counter--;
+ 
+   // And swap the last element with it
+   let temp = arr[counter];
+   arr[counter] = arr[index];
+   arr[index] = temp;
+ }
+ 
+ return arr;
+}
+function resetGame() {
+ setUpGame();
+}
+function endGame() {
+ hideElement('memoryGame');
+ showElement('startGameSection');
+ showElement('startGameSection2');
+}
+function setUpGame() {
+ var memeoryGame = new MemoryGame();
+ hideElement('memoryGame');
+ var player1 = document.getElementById('player1').value;
+ var player2 = document.getElementById('player2').value;
+ var player3 = document.getElementById('player3').value;
+ var player4 = document.getElementById('player4').value;
+ var player5 = document.getElementById('player5').value;
+ if (player1 == '' || player2 == '') {
+   alert('Please enter player name(s)');
+ } else {
+   console.log(player3);
+   memeoryGame.addPlayer(player1);
+   memeoryGame.addPlayer(player2);
+   if (player3 != '') {
+     memeoryGame.addPlayer(player3);
+   }
+   if (player4 != '') {
+     memeoryGame.addPlayer(player4);
+   }
+   if (player5 != '') {
+     memeoryGame.addPlayer(player5);
+   }
+   hideElement('startGameSection');
+   hideElement('startGameSection2');
+   showElement('memoryGame');
+   memeoryGame.startGame();
+ }
+}
+ 
+var Card = function (name) {
+ this.name = name;
+ this.isGuessed = false;
+ this.isCardOut = false;
+};
+var MemoryGame = function () {
+ this.board = [];
+ this.cardNames = [
+   'cat',
+   'turtle',
+   'tiger',
+   'leopard',
+   'shark',
+   'dog',
+   'fox',
+   'pig',
+   'snake',
+   'dolphin',
+   'bunny',
+   'horse',
+   'lion',
+   'peacock',
+   'koala',
+ ];
+ this.cardMap = {
+   bunny:
+     'https://4.bp.blogspot.com/-w8U75TCuhgU/Tzw8TmaclvI/AAAAAAAABJ0/6fMMcRLAceM/s1600/Rabbit3.jpg',
+   tiger:
+     'https://c402277.ssl.cf1.rackcdn.com/photos/18134/images/hero_small/Medium_WW226365.jpg?1574452099',
+   pig: 'https://cdn.britannica.com/41/9641-004-A8DD825D/Yorkshire-boar.jpg',
+   turtle:
+     'https://cdn.cnn.com/cnnnext/dam/assets/181205104053-01-turtle-plastic-super-tease.jpg',
+   peacock: 'https://cdn.hswstatic.com/gif/peacock-feathers.jpg',
+   fox:
+     'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcS3JEj2O2oH-S_T0I3BrfXE0TujPm53i3c1opqRI6QMVxineVw%3Ahttps%3A%2F%2Fclearcreekcounty.org%2Fwp-content%2Fuploads%2F2016%2F11%2Fwildlife_fox.jpg&usqp=CAU',
+   koala:
+     'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTbBGtR79XKY1xFNIbdH9_AOkMYFHjUNcyJJtAQ8r3jyG8GFJ0%3Ahttps%3A%2F%2Fwww.statnews.com%2Fwp-content%2Fuploads%2F2019%2F10%2FAdobeStock_194578054.jpeg&usqp=CAU',
+   dolphin:
+     'https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTxcoA7X00PeXFNErw-4hspI3DrSXW09x1OgmoJXprmQqpdmkM%3Ahttps%3A%2F%2Fimages2.minutemediacdn.com%2Fimage%2Fupload%2Fc_crop%2Ch_1778%2Cw_3155%2Cx_0%2Cy_843%2Fv1554928552%2Fshape%2Fmentalfloss%2F540093-istock-514343279.jpg%3Fitok%3DisS-TJcM&usqp=CAU',
+   cat:
+     'https://icatcare.org/app/uploads/2018/07/Thinking-of-getting-a-cat.png',
+   lion:
+     'https://ichef.bbci.co.uk/news/1024/cpsprodpb/E0F0/production/_112548575_gettyimages-492611032-1.jpg',
+   snake:
+     'https://images.techhive.com/images/article/2016/01/1200px-burmese_python_02-100637340-large.jpg',
+   leopard:
+     'https://s01.sgp1.cdn.digitaloceanspaces.com/article/12185-e21ec98d-f5ea-4021-9334-11b49e324c0f.jpg',
+   shark: 'https://scitechdaily.com/images/Great-White-Shark-Smile.jpg',
+   dog: 'https://www.dogsforgood.org/app/uploads/2019/06/Georgie-web.jpg',
+   horse:
+     'https://www.thesprucepets.com/thmb/MZcIufmv4DQ6QlSYy6YBmo0Pzg4=/3435x2576/smart/filters:no_upscale()/horse-galloping-in-grass-688899769-587673275f9b584db3a44cdf.jpg',
+   flipCard:
+     'https://saved-work.desmos.com/calc_thumbs/production/fapfer8x0u.png',
+ };
+ for (var i = this.cardNames.length - 1; i >= 0; i--) {
+   this.cardNames.push(this.cardNames[i]);
+ }
+ shuffle(this.cardNames);
+ for (var i = 0; i < 5; i++) {
+   var row = [];
+   for (var j = 0; j < 6; j++) {
+     row.push(new Card(this.cardNames[i * 6 + j]));
+   }
+   this.board.push(row);
+ }
+ for (var i = 0; i < this.board.length; i++) {
+   for (var j = 0; j < this.board[i].length; j++) {
+     var element = document.getElementById('image_' + i + '_' + j);
+     element.width = '100';
+     // element.src = this.cardMap[this.board[i][j].name];
+     element.setAttribute('row', i + '');
+     element.setAttribute('col', j + '');
+    //  element.src =
+    //    'https://saved-work.desmos.com/calc_thumbs/production/fapfer8x0u.png';
+   }
+ }
+ //console.log(this.cardNames)
+ this.currentGuess1 = null;
+ this.currentGuess2 = null;
+ this.players = [];
+ this.currentPlayerIndex = 0;
+};
+var Player = function (name) {
+ this.points = 0;
+ this.name = name;
+};
+MemoryGame.prototype.addCard = function (name) {
+ var newCard = new Card(name);
+ this.board.push(newCard);
+};
+MemoryGame.prototype.addPlayer = function (name) {
+ var newPlayer = new Player(name);
+ this.players.push(newPlayer);
+};
+MemoryGame.prototype.hideCard = function (row, col) {
+ var element = document.getElementById('image_' + row + '_' + col);
+ element.setAttribute('src', this.cardMap['flipCard']);
+ this.setOnClick(element);
+};
+MemoryGame.prototype.showScore = function () {
+ var scores = '<br>';
+ for (var i = 0; i < this.players.length; i++) {
+   scores += this.players[i].name + ': ' + this.players[i].points + '<br>';
+ }
+ scores += '</br>';
+ document.getElementById('points').innerHTML = scores;
+};
+MemoryGame.prototype.setOnClick = function (element) {
+ var mygame = this;
+ element.onclick = async function () {
+   var row = parseInt(this.getAttribute('row'));
+   var col = parseInt(this.getAttribute('col'));
+   this.setAttribute('src', mygame.cardMap[mygame.board[row][col].name]);
+   this.onclick = null;
+   if (mygame.currentGuess1 == null) {
+     mygame.currentGuess1 = {
+       index1: row,
+       index2: col,
+     };
+   } else {
+     mygame.currentGuess2 = {
+       index1: row,
+       index2: col,
+     };
+     if (
+       mygame.board[mygame.currentGuess1.index1][mygame.currentGuess1.index2]
+         .name ==
+       mygame.board[mygame.currentGuess2.index1][mygame.currentGuess2.index2]
+         .name
+     ) {
+       mygame.players[mygame.currentPlayerIndex].points++;
+       mygame.showScore();
+     } else {
+       await sleep(500);
+       mygame.hideCard(
+         mygame.currentGuess1.index1,
+         mygame.currentGuess1.index2
+       );
+       mygame.hideCard(
+         mygame.currentGuess2.index1,
+         mygame.currentGuess2.index2
+       );
+       mygame.currentPlayerIndex++;
+       if (mygame.currentPlayerIndex == mygame.players.length) {
+         mygame.currentPlayerIndex = 0;
+       }
+       document.getElementById('currentPlayerSpan').innerHTML =
+         mygame.players[mygame.currentPlayerIndex].name;
+     }
+     mygame.currentGuess1 = null;
+     mygame.currentGuess2 = null;
+   }
+ };
+};
+function showElement(elementId) {
+ document.getElementById(elementId).style = 'display: block';
+}
+ 
+function hideElement(elementId) {
+ document.getElementById(elementId).style = 'display: none';
+}
+MemoryGame.prototype.startGame = function () {
+ this.showScore();
+ document.getElementById('currentPlayerSpan').innerHTML = this.players[
+   this.currentPlayerIndex
+ ].name;
+ for (var i = 0; i < this.board.length; i++) {
+   for (var j = 0; j < this.board[i].length; j++) {
+     var element = document.getElementById('image_' + i + '_' + j);
+     this.setOnClick(element);
+     element.src =
+       'https://saved-work.desmos.com/calc_thumbs/production/fapfer8x0u.png';
+   }
+ }
+ var max = this.players[0];
+ var tiebreaker = [];
+ for (var i = 1; i < this.players.length; i++) {
+   if (this.players[i].points > max.points) {
+     max = this.players[i];
+   } else if (this.players[i].points == max.points) {
+     tiebreaker.push(this.players[i]);
+   }
+ }
+ if (this.isGameOver() == true) {
+   if (tiebreaker != []) {
+     alert('We have ' + tiebreaker + 'winners');
+   } else {
+     alert('The winner is ' + max.name + '!');
+   }
+   var anotherGame = prompt('Would you like to start another game?');
+ }
+};
+MemoryGame.prototype.isGameOver = function () {
+ var totalPoints = 0;
+ for (var i = 0; i < this.players.length; i++) {
+   totalPoints += this.players[i].points;
+ }
+ console.log(totalPoints);
+ if (totalPoints == 15) {
+   return true;
+ } else {
+   return false;
+ }
+};    
+    </script>
+  </head>
+  <body>
+    <h2 style="color:blue">
+      <div id="startGameSection">
+        Player 1: <input type="text" id="player1" />
+        <br />
+        Player 2: <input type="text" id="player2" />
+        <br />
+        Player 3: <input type="text" id="player3" />
+        <br />
+        Player 4: <input type="text" id="player4" />
+        <br />
+        Player 5: <input type="text" id="player5" />
+        <br />
+        <!-- Player 3: <input type="text" id="player3" />
+     <br /> -->
+        <br />
+      </div>
+      <div id="startGameSection2">
+        <input type="button" value="Start Game" onclick="setUpGame()" />
+      </div>
+    </h2>
+
+    <br />
+    <div id="memoryGame" style="display: none">
+      <input type="button" value="Quit Game" onclick="endGame()" />
+      <input type="button" value="Reset Game" onclick="resetGame()" />
+      <h2 style="color:red">
+        Current player: <span id="currentPlayerSpan"></span>
+        <br />
+        Points: <span id="points"></span>
+      </h2>
+
+      <table cellspacing="10" cellpadding="0" border="1">
+        <tbody>
+          <tr>
+            <td>
+              <img
+                src="https://icatcare.org/app/uploads/2018/07/Thinking-of-getting-a-cat.png"
+                width="300"
+                id="image_0_0"
+              />
+            </td>
+            <td>
+              <img
+                src="https://icatcare.org/app/uploads/2018/07/Thinking-of-getting-a-cat.png"
+                width="300"
+                id="image_0_1"
+              />
+            </td>
+            <td>
+              <img
+                src="https://cdn.cnn.com/cnnnext/dam/assets/181205104053-01-turtle-plastic-super-tease.jpg"
+                width="300"
+                id="image_0_2"
+              />
+            </td>
+            <td>
+              <img
+                src="https://cdn.cnn.com/cnnnext/dam/assets/181205104053-01-turtle-plastic-super-tease.jpg"
+                width="300"
+                id="image_0_3"
+              />
+            </td>
+            <td>
+              <img
+                src="https://c402277.ssl.cf1.rackcdn.com/photos/18134/images/hero_small/Medium_WW226365.jpg?1574452099"
+                width="300"
+                id="image_0_4"
+              />
+            </td>
+            <td>
+              <img
+                src="https://c402277.ssl.cf1.rackcdn.com/photos/18134/images/hero_small/Medium_WW226365.jpg?1574452099"
+                width="300"
+                id="image_0_5"
+              />
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <img
+                src="https://s01.sgp1.cdn.digitaloceanspaces.com/article/12185-e21ec98d-f5ea-4021-9334-11b49e324c0f.jpg"
+                width="300"
+                id="image_1_0"
+              />
+            </td>
+            <td>
+              <img
+                src="https://s01.sgp1.cdn.digitaloceanspaces.com/article/12185-e21ec98d-f5ea-4021-9334-11b49e324c0f.jpg"
+                width="300"
+                id="image_1_1"
+              />
+            </td>
+            <td>
+              <img
+                src="https://www.dogsforgood.org/app/uploads/2019/06/Georgie-web.jpg"
+                width="300"
+                id="image_1_2"
+              />
+            </td>
+            <td>
+              <img
+                src="https://scitechdaily.com/images/Great-White-Shark-Smile.jpg"
+                width="300"
+                id="image_1_3"
+              />
+            </td>
+            <td>
+              <img
+                src="https://scitechdaily.com/images/Great-White-Shark-Smile.jpg"
+                width="300"
+                id="image_1_4"
+              />
+            </td>
+            <td>
+              <img
+                src="https://www.dogsforgood.org/app/uploads/2019/06/Georgie-web.jpg"
+                width="300"
+                id="image_1_5"
+              />
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <img
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcS3JEj2O2oH-S_T0I3BrfXE0TujPm53i3c1opqRI6QMVxineVw%3Ahttps%3A%2F%2Fclearcreekcounty.org%2Fwp-content%2Fuploads%2F2016%2F11%2Fwildlife_fox.jpg&usqp=CAU"
+                width="300"
+                id="image_2_0"
+              />
+            </td>
+            <td>
+              <img
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcS3JEj2O2oH-S_T0I3BrfXE0TujPm53i3c1opqRI6QMVxineVw%3Ahttps%3A%2F%2Fclearcreekcounty.org%2Fwp-content%2Fuploads%2F2016%2F11%2Fwildlife_fox.jpg&usqp=CAU"
+                width="300"
+                id="image_2_1"
+              />
+            </td>
+            <td>
+              <img
+                src="https://cdn.britannica.com/41/9641-004-A8DD825D/Yorkshire-boar.jpg"
+                width="300"
+                id="image_2_2"
+              />
+            </td>
+            <td>
+              <img
+                src="https://cdn.britannica.com/41/9641-004-A8DD825D/Yorkshire-boar.jpg"
+                width="300"
+                id="image_2_3"
+              />
+            </td>
+            <td>
+              <img
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTxcoA7X00PeXFNErw-4hspI3DrSXW09x1OgmoJXprmQqpdmkM%3Ahttps%3A%2F%2Fimages2.minutemediacdn.com%2Fimage%2Fupload%2Fc_crop%2Ch_1778%2Cw_3155%2Cx_0%2Cy_843%2Fv1554928552%2Fshape%2Fmentalfloss%2F540093-istock-514343279.jpg%3Fitok%3DisS-TJcM&usqp=CAU"
+                width="300"
+                id="image_2_4"
+              />
+            </td>
+            <td>
+              <img
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTxcoA7X00PeXFNErw-4hspI3DrSXW09x1OgmoJXprmQqpdmkM%3Ahttps%3A%2F%2Fimages2.minutemediacdn.com%2Fimage%2Fupload%2Fc_crop%2Ch_1778%2Cw_3155%2Cx_0%2Cy_843%2Fv1554928552%2Fshape%2Fmentalfloss%2F540093-istock-514343279.jpg%3Fitok%3DisS-TJcM&usqp=CAU"
+                width="300"
+                id="image_2_5"
+              />
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <img
+                src="https://4.bp.blogspot.com/-w8U75TCuhgU/Tzw8TmaclvI/AAAAAAAABJ0/6fMMcRLAceM/s1600/Rabbit3.jpg"
+                width="300"
+                id="image_3_0"
+              />
+            </td>
+            <td>
+              <img
+                src="https://4.bp.blogspot.com/-w8U75TCuhgU/Tzw8TmaclvI/AAAAAAAABJ0/6fMMcRLAceM/s1600/Rabbit3.jpg"
+                width="300"
+                id="image_3_1"
+              />
+            </td>
+            <td>
+              <img
+                src="https://images.techhive.com/images/article/2016/01/1200px-burmese_python_02-100637340-large.jpg"
+                width="300"
+                id="image_3_2"
+              />
+            </td>
+            <td>
+              <img
+                src="https://images.techhive.com/images/article/2016/01/1200px-burmese_python_02-100637340-large.jpg"
+                width="300"
+                id="image_3_3"
+              />
+            </td>
+            <td>
+              <img
+                src="https://www.thesprucepets.com/thmb/MZcIufmv4DQ6QlSYy6YBmo0Pzg4=/3435x2576/smart/filters:no_upscale()/horse-galloping-in-grass-688899769-587673275f9b584db3a44cdf.jpg"
+                width="300"
+                id="image_3_4"
+              />
+            </td>
+            <td>
+              <img
+                src="https://www.thesprucepets.com/thmb/MZcIufmv4DQ6QlSYy6YBmo0Pzg4=/3435x2576/smart/filters:no_upscale()/horse-galloping-in-grass-688899769-587673275f9b584db3a44cdf.jpg"
+                width="300"
+                id="image_3_5"
+              />
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <img
+                src="https://ichef.bbci.co.uk/news/1024/cpsprodpb/E0F0/production/_112548575_gettyimages-492611032-1.jpg"
+                width="300"
+                id="image_4_0"
+              />
+            </td>
+            <td>
+              <img
+                src="https://ichef.bbci.co.uk/news/1024/cpsprodpb/E0F0/production/_112548575_gettyimages-492611032-1.jpg"
+                width="300"
+                id="image_4_1"
+              />
+            </td>
+            <td>
+              <img
+                src="https://cdn.hswstatic.com/gif/peacock-feathers.jpg"
+                width="300"
+                id="image_4_2"
+              />
+            </td>
+            <td>
+              <img
+                src="https://cdn.hswstatic.com/gif/peacock-feathers.jpg"
+                width="300"
+                id="image_4_3"
+              />
+            </td>
+            <td>
+              <img
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTbBGtR79XKY1xFNIbdH9_AOkMYFHjUNcyJJtAQ8r3jyG8GFJ0%3Ahttps%3A%2F%2Fwww.statnews.com%2Fwp-content%2Fuploads%2F2019%2F10%2FAdobeStock_194578054.jpeg&usqp=CAU"
+                width="300"
+                id="image_4_4"
+              />
+            </td>
+            <td>
+              <img
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcTbBGtR79XKY1xFNIbdH9_AOkMYFHjUNcyJJtAQ8r3jyG8GFJ0%3Ahttps%3A%2F%2Fwww.statnews.com%2Fwp-content%2Fuploads%2F2019%2F10%2FAdobeStock_194578054.jpeg&usqp=CAU"
+                width="300"
+                id="image_4_5"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
