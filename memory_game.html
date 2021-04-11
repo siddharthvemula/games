@@ -212,6 +212,22 @@ MemoryGame.prototype.setOnClick = function (element) {
      ) {
        mygame.players[mygame.currentPlayerIndex].points++;
        mygame.showScore();
+ var max = mygame.players[0];
+        var tiebreaker = [];
+        for (var i = 1; i < mygame.players.length; i++) {
+          if (mygame.players[i].points > max.points) {
+            max = mygame.players[i];
+          } else if (mygame.players[i].points == max.points) {
+             tiebreaker.push(mygame.players[i]);
+          }
+        }
+        if (mygame.isGameOver() == true) {
+          if (tiebreaker.length != 0) {
+            alert('We have ' + tiebreaker + 'winners');
+          } else {
+            alert('The winner is ' + max.name + '!');
+          }
+        }
      } else {
        await sleep(500);
        mygame.hideCard(
@@ -233,6 +249,7 @@ MemoryGame.prototype.setOnClick = function (element) {
      mygame.currentGuess2 = null;
    }
  };
+ console.log("RUNNING")
 };
 function showElement(elementId) {
  document.getElementById(elementId).style = 'display: block';
@@ -253,23 +270,6 @@ MemoryGame.prototype.startGame = function () {
      element.src =
        'https://saved-work.desmos.com/calc_thumbs/production/fapfer8x0u.png';
    }
- }
- var max = this.players[0];
- var tiebreaker = [];
- for (var i = 1; i < this.players.length; i++) {
-   if (this.players[i].points > max.points) {
-     max = this.players[i];
-   } else if (this.players[i].points == max.points) {
-     tiebreaker.push(this.players[i]);
-   }
- }
- if (this.isGameOver() == true) {
-   if (tiebreaker != []) {
-     alert('We have ' + tiebreaker + 'winners');
-   } else {
-     alert('The winner is ' + max.name + '!');
-   }
-   var anotherGame = prompt('Would you like to start another game?');
  }
 };
 MemoryGame.prototype.isGameOver = function () {
