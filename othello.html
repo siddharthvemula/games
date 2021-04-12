@@ -12,6 +12,9 @@
 <script type="text/javascript">
 </script>
   </head>
+	<h2 style = "color:blue; display: none" id = "winner">
+		The winner is: <span id="whoWon"></span>
+	</h2>
   <table cellspacing="0" cellpadding="10" border="1" style="float: left;">
           <tbody>
             <tr>
@@ -263,6 +266,7 @@ Othello.prototype.handleClick = function (x, y) {
 		}
 		this.checkIfFlip(x, y);
 		this.render();
+		this.isGameOver();
 	} else {
 		return;
 	};
@@ -287,6 +291,7 @@ Othello.prototype.checkIfFlip = function (x, y) {
 			}
 		}
 	}
+	passedBy = [];
   for (var i = addY; i < 8; i++) {
 	  if (this.board[x][i] != null && this.board[x][i].color == this.board[x][y].color) {
 		  this.flipInBetween(passedBy, this.board[x][y].color)
@@ -299,6 +304,7 @@ Othello.prototype.checkIfFlip = function (x, y) {
 			}
 		}
 	}
+	passedBy = [];
 	for (var i = subX; i >= 0; i--) {
 	  if (this.board[i][y] != null && this.board[i][y].color == this.board[x][y].color) {
 		  this.flipInBetween(passedBy, this.board[x][y].color)
@@ -311,6 +317,7 @@ Othello.prototype.checkIfFlip = function (x, y) {
 			}
 		}
 	}
+	passedBy = [];
 	for (var i = subY; i >= 0; i--) {
 	  if (this.board[x][i] != null && this.board[x][i].color == this.board[x][y].color) {
 		  this.flipInBetween(passedBy, this.board[x][y].color)
@@ -323,9 +330,8 @@ Othello.prototype.checkIfFlip = function (x, y) {
 			}
 		}
 	}
-	for (var i = 1; x < 8 && y < 8; x++ && y++) {
-		x += 1;
-		y += 1;
+	passedBy = [];
+	for (x = ogX + 1, y = ogY + 1; x < 8 && y < 8; x++, y++) {
 	  if (this.board[x][y] != null && this.board[x][y].color == this.board[ogX][ogY].color) {
 		  this.flipInBetween(passedBy, this.board[ogX][ogY].color)
 		} else if (this.board[x][y] == null) {
@@ -337,6 +343,76 @@ Othello.prototype.checkIfFlip = function (x, y) {
 			}
 		}
 	}
+	passedBy = [];
+	for (x = ogX + 1, y = ogY - 1; x < 8 && y >= 0; x++, y--) {
+	  if (this.board[x][y] != null && this.board[x][y].color == this.board[ogX][ogY].color) {
+		  this.flipInBetween(passedBy, this.board[ogX][ogY].color)
+		} else if (this.board[x][y] == null) {
+			passedBy = [];
+		  break;
+		} else {
+			if (this.board[x][y] != null && this.board[x][y].color != this.board[ogX][ogY].color) {
+			  passedBy.push(this.board[x][y])
+			}
+		}
+	}
+	passedBy = [];
+	for (x = ogX - 1, y = ogY + 1; x >= 0 && y < 8; x--, y++) {
+		if (this.board[x][y] != null && this.board[x][y].color == this.board[ogX][ogY].color) {
+		  this.flipInBetween(passedBy, this.board[ogX][ogY].color)
+		} else if (this.board[x][y] == null) {
+			passedBy = [];
+		  break;
+		} else {
+			if (this.board[x][y] != null && this.board[x][y].color != this.board[ogX][ogY].color) {
+			  passedBy.push(this.board[x][y])
+			}
+		}
+	}
+	passedBy = [];
+	for (x = ogX - 1, y = ogY - 1; x >= 0 && y >= 0; x--, y--) {
+		if (this.board[x][y] != null && this.board[x][y].color == this.board[ogX][ogY].color) {
+		  this.flipInBetween(passedBy, this.board[ogX][ogY].color)
+		} else if (this.board[x][y] == null) {
+			passedBy = [];
+		  break;
+		} else {
+			if (this.board[x][y] != null && this.board[x][y].color != this.board[ogX][ogY].color) {
+			  passedBy.push(this.board[x][y])
+			}
+		}
+	}
+	passedBy = [];
+};
+Othello.prototype.whoWon = function (arrObj) {
+	document.getElementById("winner").style = "color:blue; display: block";
+  if (arrObj.whiteArr.length > arrObj.blackArr.length) {
+	  document.getElementById("whoWon").innerHTML = "White";
+	} else if (arrObj.whiteArr.length < arrObj.blackArr.length) {
+		document.getElementById("whoWon").innerHTML = "Black";
+	} else {
+	  document.getElementById("whoWon").innerHTML = "Tie";
+	}
+};
+Othello.prototype.isGameOver = function () {
+	var arr = {
+	  whiteArr : [],
+	  blackArr : [],
+	};
+  for (var i = 0; i < 8; i++) {
+    for (var j = 0; j < 8; j++) {
+			if (this.board[i][j] == null) {
+				return;
+			} else {
+			  if (this.board[i][j].color == "white") {
+				  arr.whiteArr.push(this.board[i][j]);
+				} else {
+				  arr.blackArr.push(this.board[i][j]);
+				}
+			}
+		}
+	}
+  this.whoWon(arr)
 };
 Othello.prototype.flipInBetween = function (arr, color) {
   for (var i = 0; i < arr.length; i++) {
@@ -365,5 +441,6 @@ Othello.prototype.getImage = function(x, y) {
 Othello.prototype.getCell = function(x, y) {
   return document.getElementById('cell_' + x + '_' + y);
 }
+
   var othello = new Othello();
 </script>
