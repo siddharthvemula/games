@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <title>Page Title</title>
+<style type="text/css">
+.white {
+  background-color: white;
+  width: 40px;
+  height: 40px;
+}
+
+.black {
+  background-color: gray;
+  width: 40px;
+  height: 40px;
+}
+.dot {
+    background-color: rgba(0,255,0);
+}
+</style>
+<script type="text/javascript">
+var BOARD_SIZE = 8;
+
+var Position = function(x, y) {
+  this.x = x;
+  this.y = y;
+}
+
+var Piece = function(type, color, pos) {
+  this.type = type;
+  this.color = color;
+  this.pos = pos;
+  this.firstmove = true;
+  this.previousMoveX = null;
+  this.previousMoveY = null;
+  if (type == 'pawn') {
+    this.enPassant = null;
+    if (this.color == "white") {
+      this.direction = 1
+    } else {
+      this.direction = -1
+    }
+    this.validmoves = ""
+    if (color == 'white') {
+      this.url = 'https://upload.wikimedia.org/wikipedia/commons/0/04/Chess_plt60.png';
+    } else {
+      this.url = 'https://upload.wikimedia.org/wikipedia/commons/c/cd/Chess_pdt60.png';
+    }
+  } else if (type == 'rook') {
+    if (color == 'white') {
+      this.url = 'https://upload.wikimedia.org/wikipedia/commons/5/5c/Chess_rlt60.png';
+    } else {
+      this.url = 'https://upload.wikimedia.org/wikipedia/commons/a/a0/Chess_rdt60.png';
+    }
+  } else if (type == 'knight') {
+    if (color == 'white') {
+      this.url = 'https://upload.wikimedia.org/wikipedia/commons/2/28/Chess_nlt60.png';
+    } else {
+      this.url = 'https://upload.wikimedia.org/wikipedia/commons/f/f1/Chess_ndt60.png';
+    }
+  } else if (type == 'bishop') {
+    if (color == 'white') {
+      this.url = 'https://upload.wikimedia.org/wikipedia/commons/9/9b/Chess_blt60.png';
+    } else {
+      this.url = 'https://upload.wikimedia.org/wikipedia/commons/8/81/Chess_bdt60.png';
+    }
+  } else if (type == 'queen') {
+    if (color == 'white') {
+      this.url = 'https://upload.wikimedia.org/wikipedia/commons/4/49/Chess_qlt60.png';
+    } else {
+      this.url = 'https://upload.wikimedia.org/wikipedia/commons/a/af/Chess_qdt60.png';
+    }
+  } else if (type == 'king') {
+    if (color == 'white') {
+      this.url = 'https://upload.wikimedia.org/wikipedia/commons/3/3b/Chess_klt60.png';
+    } else {
+      this.url = 'https://upload.wikimedia.org/wikipedia/commons/e/e3/Chess_kdt60.png';
+    }
+  }
+  this.selected = false;
+}
+
+Piece.prototype.isWhite = function() {
+  return this.color == 'white';
+}
+
+Piece.prototype.isPawn = function() {
+  return this.type == 'pawn';
+}
+
+Piece.prototype.setPosition = function(pos) {
+  this.pos = pos;
+}
+
+Piece.prototype.isFirstMove = function() {
+  if (this.isPawn()) {
+    if (this.isWhite()) {
+      return this.pos.x == 6;
+    } else {
+      return this.pos.x == 1;
+    }
+  } else {
+    return false;
+  }
+}
+var Player = function(name, color) {
+  this.name = name;
+  this.color = color;
+}
+var Chess = function() {
+  this.capturedPieces = {
+    white: {
+      pawn:0,
+      rook:0,
+      knight:0,
+      bishop:0,
+      queen:0
+    },
+    black: {
+      pawn:0,
+      rook:0,
+      knight:0,
+      bishop:0,
+      queen:0
+    }
+  }
+  this.previousPiece = null;
+  this.player1 = null;
+  this.player2 = null;
+  this.board = [];
+  this.selectedX = -1;
+  this.selectedY = -1;
+  this.validMoves = [];
+  this.turn = 'white';
+  for (var i = 0; i < BOARD_SIZE; i++) {
+    this.board.push(new Array(BOARD_SIZE));
+    for (var j = 0; j < this.board[i].length; j++) {
+      if (i == 1) {
+        this.board[i][j] = new Piece('pawn', 'black', new Position(i, j));
+      } else if (i == 6) {
+        this.board[i][j] = new Piece('pawn', 'white', new Position(i, j));
+      }
+      var chessGameRef = this;
+      this.getCell(i, j).onclick = function() {
+        chessGameRef.cellClicked(parseInt(this.getAttribute('row')), parseInt(this.getAttribute('col')));
+      }
+    }
+  }
+  this.board[0][0] = new Piece('rook', 'black', new Position(0, 0));
+  this.board[0][1] = new Piece('knight', 'black', new Position(0, 1));
+  this.board[0][2] = new Piece('bishop', 'black', new Position(0, 2));
+  this.board[0][3] = new Piece('queen', 'black', new Position(0, 3));
+  this.board[0][4] = new Piece('king', 'black', new Position(0, 4))
+  this.board[0][5] = new Piece('bishop', 'black', new Position(0, 5));
+  this.board[0][6] = new Piece('knight', 'black', new Position(0, 6));
+  this.board[0][7] = new Piece('rook', 'black', new Position(0, 7));
+  // The black peices have been created, now starts the whites
+  this.board[7][0] = new Piece('rook', 'white', new Position(7, 0));
+  this.board[7][1] = new Piece('knight', 'white', new Position(7, 1));
+  this.board[7][2] = new Piece('bishop', 'white', new Position(7, 2));
+  this.board[7][3] = new Piece('queen', 'white', new Position(7, 3));
+  this.board[7][4] = new Piece('king', 'white', new Position(7, 4))
+  this.board[7][5] = new Piece('bishop', 'white', new Position(7, 5));
+  this.board[7][6] = new Piece('knight', 'white', new Position(7, 6));
+  this.board[7][7] = new Piece('rook', 'white', new Position(7, 7));
+  this.render();
+}
+Chess.prototype.logCapturedPiece = function (piece) {
+  this.capturedPieces[piece.color][piece.type]++;
+}
+Chess.prototype.cellClicked = function(x, y) {
+  if (this.selectedX != -1) {
+    // same piece selected again - so deselect
+    if (this.selectedX == x && this.selectedY == y) {
+      this.selectedX = -1;
+      this.selectedY = -1;
+      this.board[x][y].selected = false;
+      this.validMoves = [];
+    } else if (this.isValidMove(x, y)) {
+      // capture piece
+      var selectedPiece = this.board[this.selectedX][this.selectedY];
+      if (this.board[this.selectedX][this.selectedY].enPassant == true && this.selectedY - y != 0 && this.board[x][y] == null) {
+        this.logCapturedPiece(this.board[this.selectedX][y])
+        this.board[this.selectedX][y] = null;
+      }
+      if (this.board[x][y]) {
+        this.logCapturedPiece(this.board[x][y])
+        this.placePiece(selectedPiece, x, y);
+        this.previousPiecefindCapturedPiece = selectedPiece;
+        selectedPiece.previousMoveX = this.selectedX
+        selectedPiece.previousMoveY = this.selectedY;
+        this.validMoves = [];
+        this.selectedX = -1;
+        this.selectedY = -1;
+        selectedPiece.selected = false;
+      } else {
+        var selectedPiece = this.board[this.selectedX][this.selectedY];
+        if (selectedPiece.type == 'king' && this.selectedX == x && Math.abs(this.selectedY - y) == 2) {
+          var rook = null;
+          var newRookPosY = -1;
+          if (y < this.selectedY) {
+            rook = this.board[x][0];
+            newRookPosY = 3;
+          } else {
+            rook = this.board[x][7];
+            newRookPosY = 5;
+          }
+          rook.firstmove = false;
+          this.placePiece(rook, x, newRookPosY);
+        }
+        selectedPiece.firstmove = false;
+				this.placePiece(selectedPiece, x, y);
+        if (selectedPiece.color == "white" && selectedPiece.type == "pawn") {
+          if (x == 0) {
+            var promotion = prompt("What piece would you like to promote too?" + "\n"+ "  " + "Typing 1 means rook." + "\n" + "  " + "Typing 2 means bishop." + "\n" + "  " + "Typing 3 means knight." + "\n"+ "  " + "Typing 4 means queen.")
+            console.log(promotion)
+            if (promotion == 1) {
+              this.board[x][y] = null;
+							this.board[x][y] = new Piece('rook', 'white', new Position(x, y));
+            } else if (promotion == 2) {
+                this.board[x][y] = null;
+							  this.board[x][y] = new Piece('bishop', 'white', new Position(x, y));
+            } else if (promotion == 3) {
+                this.board[x][y] = null;
+							  this.board[x][y] = new Piece('knight', 'white', new Position(x, y));
+            } else if (promotion == 4) {
+                this.board[x][y] = null;
+							  this.board[x][y] = new Piece('queen', 'white', new Position(x, y));
+            } else {
+            }
+          }
+        } else if (selectedPiece.color == "black" && selectedPiece.type == "pawn") {
+          if (x == 7) {
+            var promotion = prompt("What piece would you like to promote too?" + "\n"+ "  " + "Typing 1 means rook." + "\n" + "  " + "Typing 2 means bishop." + "\n" + "  " + "Typing 3 means knight." + "\n"+ "  " + "Typing 4 means queen.")
+            console.log(promotion)
+            if (promotion == 1) {
+              this.board[x][y] = null;
+							this.board[x][y] = new Piece('rook', 'black', new Position(x, y));
+            } else if (promotion == 2) {
+                this.board[x][y] = null;
+							  this.board[x][y] = new Piece('bishop', 'black', new Position(x, y));
+            } else if (promotion == 3) {
+                this.board[x][y] = null;
+							  this.board[x][y] = new Piece('knight', 'black', new Position(x, y));
+            } else if (promotion == 4) {
+                this.board[x][y] = null;
+							  this.board[x][y] = new Piece('queen', 'black', new Position(x, y));
+            } else {
+            }
+          }
+        }
+          this.previousPiece = selectedPiece;
+          selectedPiece.previousMoveX = this.selectedX
+          selectedPiece.previousMoveY = this.selectedY;
+          selectedPiece.selected = false;
+          this.selectedX = -1;
+          this.selectedY = -1;
+          this.validMoves = [];
+        }
+          this.requestChangeTurn();
+      }
+    } else {
+      if (this.board[x][y]) {
+        if (this.board[x][y].color == this.turn) {
+          this.selectedX = x;
+          this.selectedY = y;
+          this.board[x][y].selected = true;
+          this.calulatedValidMoves();
+        } else {
+          this.render();
+          return;
+        }
+      }
+    }
+  this.render();
+  var isKingAlive = [];
+  for (var i = 0; i < BOARD_SIZE; i++) {
+    for (var j = 0; j < this.board[i].length; j++) {
+      if (this.board[i][j] == null) {} else if (this.board[i][j].type == "king") {
+        isKingAlive.push(this.board[i][j])
+      }
+    }
+  }
+  if (isKingAlive.length < 2) {
+    var chess = this;
+    this.turn = null;
+    if (isKingAlive[0].color == "black") {
+      this.showElement("blackWins")
+      chess.render()
+    } else {
+      this.showElement("whiteWins")
+      chess.render()
+    }
+  }
+}
+Chess.prototype.showElement = function(elementId) {
+  document.getElementById(elementId).style.display = "block"
+}
+Chess.prototype.hideElement = function(elementId) {
+  document.getElementById(elementId).style.display = "none"
+}
+Chess.prototype.requestChangeTurn = function() {
+  var chess = this;
+  setTimeout(function() {
+    chess.changeTurn();
+  }, 1000);
+}
+Chess.prototype.findLengthCaptured = function() {
+  var black = this.capturedPieces["black"]["pawn"] + this.capturedPieces["black"]["knight"] + this.capturedPieces["black"]["bishop"] + this.capturedPieces["black"]["rook"] + this.capturedPieces["black"]["queen"]
+	var white = this.capturedPieces["white"]["pawn"] + this.capturedPieces["white"]["knight"] + this.capturedPieces["white"]["bishop"] + this.capturedPieces["white"]["rook"] + this.capturedPieces["white"]["queen"]
+	var total = white + black
+	console.log(total)
+	return total;
+}
+Chess.prototype.changeTurn = function() {
+  if (this.turn == "white") {
+    this.turn = "black";
+  } else if (this.turn == "black") {
+    this.turn = "white"
+  } else {
+
+  }
+  this.render();
+}
+
+Chess.prototype.placePiece = function(piece, x, y) {
+  this.board[piece.pos.x][piece.pos.y] = null;
+  this.board[x][y] = piece;
+  piece.setPosition(new Position(x, y));
+}
+
+Chess.prototype.calulatedValidMoves = function() {
+  this.validMoves = [];
+  var piece = this.board[this.selectedX][this.selectedY];
+  if (piece.isPawn()) {
+    this.calculatePawnMoves(piece)
+  } else if (piece.type == "rook") {
+    this.calculateRookMoves(piece);
+  } else if (piece.type == "knight") {
+    this.calculateKnightMoves(piece);
+  } else if (piece.type == "bishop") {
+    this.calculateBishopMoves(piece);
+  } else if (piece.type == "queen") {
+    this.calculateQueenMoves(piece);
+  } else if (piece.type == "king") {
+    this.calculateKingMoves(piece);
+  } else {
+    return;
+  }
+}
+
+Chess.prototype.isValidMove = function(x, y) {
+  for (var i = 0; i < this.validMoves.length; i++) {
+    var validMove = this.validMoves[i];
+    if (validMove.x == x && validMove.y == y) {
+      return true;
+    }
+  }
+  return false;
+}
+
+Chess.prototype.isPositionOnBoard = function(pos) {
+  return pos.x >= 0 && pos.x <= 7 && pos.y >= 0 && pos.y <= 7;
+}
+Chess.prototype.calculatePawnMoves = function(piece) {
+  var directionFactor = piece.isWhite() ? 1 : -1;
+  // can go one step forward only if its empty
+  var newX = piece.pos.x - 1 * directionFactor;
+  if (this.board[newX][piece.pos.y] == null) {
+    this.validMoves.push(new Position(newX, piece.pos.y));
+    // can go 2 steps if this is the first move
+    if (piece.isFirstMove()) {
+      newX = piece.pos.x - 2 * directionFactor;
+      if (this.board[newX][piece.pos.y] == null) {
+        this.validMoves.push(new Position(newX, piece.pos.y));
+      }
+    }
+  }
+  // kill left position
+  newX = piece.pos.x - 1 * directionFactor;
+  var newY = piece.pos.y - 1 * directionFactor;
+  if (this.isPositionOnBoard(new Position(newX, newY))) {
+    if (this.board[newX][newY] != null && piece.color != this.board[newX][newY].color) {
+      this.validMoves.push(new Position(newX, newY));
+    }
+  }
+  // kill position right
+  newX = piece.pos.x - 1 * directionFactor;
+  var newY = piece.pos.y + 1 * directionFactor;
+  if (this.isPositionOnBoard(new Position(newX, newY))) {
+    if (this.board[newX][newY] != null && piece.color != this.board[newX][newY].color) {
+      this.validMoves.push(new Position(newX, newY));
+    }
+  }
+  //En passant
+  if (this.board[piece.pos.x][newY] == null && this.board[piece.pos.x][piece.pos.y - 1] == null) {
+    return;
+  } else {
+    if (this.isPositionOnBoard(new Position(piece.pos.x, piece.pos.y - 1)) && this.board[piece.pos.x][piece.pos.y - 1] != null && this.previousPiece != piece) {
+      if (this.board[piece.pos.x][piece.pos.y - 1].color != this.turn) {
+        if (Math.abs(this.board[piece.pos.x][piece.pos.y - 1].previousMoveX - piece.pos.x) == 2 || Math.abs(this.board[piece.pos.x][piece.pos.y - 1].previousMoveX - piece.pos.x) == 7) {
+          if (this.turn == "white") {
+            this.validMoves.push(new Position(piece.pos.x - 1, piece.pos.y - 1))
+          } else {
+            this.validMoves.push(new Position(piece.pos.x + 1, piece.pos.y - 1))
+          }
+          this.board[piece.pos.x][piece.pos.y].enPassant = true;
+        } else {
+          return;
+        }
+      } else {
+        return;
+      }
+    } else if (this.isPositionOnBoard(new Position(piece.pos.x, newY)) && this.board[piece.pos.x][newY] != null && this.previousPiece != piece) {
+      if (this.board[piece.pos.x][newY].color != this.turn) {
+        if (Math.abs(this.board[piece.pos.x][newY].previousMoveX - piece.pos.x) == 2 || Math.abs(this.board[piece.pos.x][newY].previousMoveX - piece.pos.x) == 7) {
+          if (this.turn == "white") {
+            this.validMoves.push(new Position(piece.pos.x - 1, newY))
+          } else {
+            this.validMoves.push(new Position(piece.pos.y + 1, newY))
+          }
+          this.board[piece.pos.x][piece.pos.y].enPassant = true;
+        }
+      }
+    }
+  }
+  return false;
+}
+Chess.prototype.calculateRookMoves = function(piece) {
+  var oppositeColor = null;
+  if (piece.color == "white") {
+    oppositeColor = "black"
+  } else {
+    oppositeColor = "white"
+  }
+  var newPos = {
+    x: "",
+    y: ""
+  }
+  var newPos2 = {
+    x: "",
+    y: ""
+  }
+  newPos.x = piece.pos.x
+  newPos.y = piece.pos.y
+  for (var i = 1; i <= BOARD_SIZE; i++) {
+    newPos2.x = newPos.x - i
+    if (this.isPositionOnBoard(new Position(newPos2.x, newPos.y)) == false) {
+      break;
+    } else
+    if (this.board[newPos2.x][newPos.y] == null) {
+      this.validMoves.push(new Position(newPos2.x, newPos.y));
+    } else {
+      if (this.board[newPos2.x][newPos.y].color == oppositeColor) {
+        this.validMoves.push(new Position(newPos2.x, newPos.y))
+        break;
+      } else {
+        break;
+      }
+    }
+  }
+  for (var j = 1; j <= BOARD_SIZE; j++) {
+    newPos2.x = newPos.x + j;
+    if (this.isPositionOnBoard(new Position(newPos2.x, newPos.y)) == false) {
+      break;
+    } else if (this.board[newPos2.x][newPos.y] == null) {
+      this.validMoves.push(new Position(newPos2.x, newPos.y));
+    } else {
+      if (this.board[newPos2.x][newPos.y].color == oppositeColor) {
+        this.validMoves.push(new Position(newPos2.x, newPos.y))
+        break;
+      } else {
+        break;
+      }
+    }
+  }
+  for (var y = 1; y <= BOARD_SIZE; y++) {
+    newPos2.y = newPos.y + y;
+    if (this.isPositionOnBoard(new Position(newPos.x, newPos2.y)) == false) {
+      break;
+    } else if (this.board[newPos.x][newPos2.y] == null) {
+      this.validMoves.push(new Position(newPos.x, newPos2.y));
+    } else {
+      if (this.board[newPos.x][newPos2.y].color == oppositeColor) {
+        this.validMoves.push(new Position(newPos.x, newPos2.y))
+        break;
+      } else {
+        break;
+      }
+    }
+  }
+  for (var y = 1; y <= BOARD_SIZE; y++) {
+    newPos2.y = newPos.y - y;
+    if (this.isPositionOnBoard(new Position(newPos.x, newPos2.y)) == false) {
+      break;
+    } else if (this.board[newPos.x][newPos2.y] == null) {
+      this.validMoves.push(new Position(newPos.x, newPos2.y));
+    } else {
+      if (this.board[newPos.x][newPos2.y].color == oppositeColor) {
+        this.validMoves.push(new Position(newPos.x, newPos2.y))
+        break;
+      } else {
+        break;
+      }
+    }
+  }
+}
+Chess.prototype.calculateKnightMoves = function(piece) {
+  var moves = [];
+  var oppositeColor = null;
+  if (piece.color == "white") {
+    oppositeColor = "black";
+  } else {
+    oppositeColor = "white";
+  }
+  var newPos = {
+    x: "",
+    y: ""
+  }
+  var newPos2 = {
+    x: "",
+    y: ""
+  }
+  newPos.x = piece.pos.x;
+  newPos.y = piece.pos.y;
+  newPos2.x = newPos.x - 2;
+  newPos2.y = newPos.y - 1;
+  if (this.isPositionOnBoard(new Position(newPos2.x, newPos2.y)) == false) {} else if (this.board[newPos2.x][newPos2.y] == null) {
+    this.validMoves.push(new Position(newPos2.x, newPos2.y))
+  } else {
+    if (this.board[newPos2.x][newPos2.y].color == oppositeColor) {
+      this.validMoves.push(new Position(newPos2.x, newPos2.y))
+    }
+  }
+  newPos2.x = newPos.x - 2;
+  newPos2.y = newPos.y + 1;
+  if (this.isPositionOnBoard(new Position(newPos2.x, newPos2.y)) == false) {} else if (this.board[newPos2.x][newPos2.y] == null) {
+    this.validMoves.push(new Position(newPos2.x, newPos2.y))
+  } else {
+    if (this.board[newPos2.x][newPos2.y].color == oppositeColor) {
+      this.validMoves.push(new Position(newPos2.x, newPos2.y))
+    }
+  }
+  newPos2.x = newPos.x - 1;
+  newPos2.y = newPos.y + 2;
+  if (this.isPositionOnBoard(new Position(newPos2.x, newPos2.y)) == false) {} else if (this.board[newPos2.x][newPos2.y] == null) {
+    this.validMoves.push(new Position(newPos2.x, newPos2.y))
+  } else {
+    if (this.board[newPos2.x][newPos2.y].color == oppositeColor) {
+      this.validMoves.push(new Position(newPos2.x, newPos2.y))
+    }
+  }
+  newPos2.x = newPos.x - 1;
+  newPos2.y = newPos.y - 2;
+  if (this.isPositionOnBoard(new Position(newPos2.x, newPos2.y)) == false) {} else if (this.board[newPos2.x][newPos2.y] == null) {
+    this.validMoves.push(new Position(newPos2.x, newPos2.y))
+  } else {
+    if (this.board[newPos2.x][newPos2.y].color == oppositeColor) {
+      this.validMoves.push(new Position(newPos2.x, newPos2.y))
+    }
+  }
+  newPos2.x = newPos.x + 2;
+  newPos2.y = newPos.y + 1;
+  if (this.isPositionOnBoard(new Position(newPos2.x, newPos2.y)) == false) {} else if (this.board[newPos2.x][newPos2.y] == null) {
+    this.validMoves.push(new Position(newPos2.x, newPos2.y))
+  } else {
+    if (this.board[newPos2.x][newPos2.y].color == oppositeColor) {
+      this.validMoves.push(new Position(newPos2.x, newPos2.y))
+    }
+  }
+  newPos2.x = newPos.x + 2;
+  newPos2.y = newPos.y - 1;
+  if (this.isPositionOnBoard(new Position(newPos2.x, newPos2.y)) == false) {} else if (this.board[newPos2.x][newPos2.y] == null) {
+    this.validMoves.push(new Position(newPos2.x, newPos2.y))
+  } else {
+    if (this.board[newPos2.x][newPos2.y].color == oppositeColor) {
+      this.validMoves.push(new Position(newPos2.x, newPos2.y))
+    }
+  }
+  newPos2.x = newPos.x + 1;
+  newPos2.y = newPos.y + 2;
+  if (this.isPositionOnBoard(new Position(newPos2.x, newPos2.y)) == false) {} else if (this.board[newPos2.x][newPos2.y] == null) {
+    this.validMoves.push(new Position(newPos2.x, newPos2.y))
+  } else {
+    if (this.board[newPos2.x][newPos2.y].color == oppositeColor) {
+      this.validMoves.push(new Position(newPos2.x, newPos2.y))
+    }
+  }
+  newPos2.x = newPos.x + 1;
+  newPos2.y = newPos.y - 2;
+  if (this.isPositionOnBoard(new Position(newPos2.x, newPos2.y)) == false) {} else if (this.board[newPos2.x][newPos2.y] == null) {
+    this.validMoves.push(new Position(newPos2.x, newPos2.y))
+  } else {
+    if (this.board[newPos2.x][newPos2.y].color == oppositeColor) {
+      this.validMoves.push(new Position(newPos2.x, newPos2.y))
+    }
+  }
+}
+Chess.prototype.calculateBishopMoves = function(piece) {
+  var oppositeColor = null;
+  if (piece.color == "white") {
+    oppositeColor = "black"
+  } else {
+    oppositeColor = "white"
+  }
+  var newPos = {
+    x: "",
+    y: ""
+  }
+  var newPos2 = {
+    x: "",
+    y: ""
+  }
+  newPos.x = piece.pos.x;
+  newPos.y = piece.pos.y;
+  for (var i = 1; i <= BOARD_SIZE; i++) {
+    newPos2.x = newPos.x - i;
+    newPos2.y = newPos.y - i;
+    if (this.isPositionOnBoard(new Position(newPos2.x, newPos2.y)) == false) {
+      break;
+    } else
+    if (this.board[newPos2.x][newPos2.y] == null) {
+      this.validMoves.push(new Position(newPos2.x, newPos2.y));
+    } else {
+      if (this.board[newPos2.x][newPos2.y].color == oppositeColor) {
+        this.validMoves.push(new Position(newPos2.x, newPos2.y))
+        break;
+      } else {
+        break;
+      }
+    }
+  }
+  for (var i = 1; i <= BOARD_SIZE; i++) {
+    newPos2.x = newPos.x + i;
+    newPos2.y = newPos.y + i;
+    if (this.isPositionOnBoard(new Position(newPos2.x, newPos2.y)) == false) {
+      break;
+    } else
+    if (this.board[newPos2.x][newPos2.y] == null) {
+      this.validMoves.push(new Position(newPos2.x, newPos2.y));
+    } else {
+      if (this.board[newPos2.x][newPos2.y].color == oppositeColor) {
+        this.validMoves.push(new Position(newPos2.x, newPos2.y))
+        break;
+      } else {
+        break;
+      }
+    }
+  }
+  for (var i = 1; i <= BOARD_SIZE; i++) {
+    newPos2.x = newPos.x - i
+    newPos2.y = newPos.y + i
+    if (this.isPositionOnBoard(new Position(newPos2.x, newPos2.y)) == false) {
+      break;
+    } else
+    if (this.board[newPos2.x][newPos2.y] == null) {
+      this.validMoves.push(new Position(newPos2.x, newPos2.y));
+    } else {
+        if (this.board[newPos2.x][newPos2.y].color == oppositeColor) {
+          this.validMoves.push(new Position(newPos2.x, newPos2.y))
+          break;
+      } else {
+          break;
+      }
+    }
+  }
+  for (var i = 1; i <= BOARD_SIZE; i++) {
+    newPos2.x = newPos.x + i
+    newPos2.y = newPos.y - i
+    if (this.isPositionOnBoard(new Position(newPos2.x, newPos2.y)) == false) {
+      break;
+    } else
+    if (this.board[newPos2.x][newPos2.y] == null) {
+      this.validMoves.push(new Position(newPos2.x, newPos2.y));
+    } else {
+      if (this.board[newPos2.x][newPos2.y].color == oppositeColor) {
+        this.validMoves.push(new Position(newPos2.x, newPos2.y))
+        break;
+      }  else {
+        break;
+      }
+    }
+  }
+}
+Chess.prototype.calculateQueenMoves = function(piece) {
+  this.calculateRookMoves(piece)
+  this.calculateBishopMoves(piece)
+}
+Chess.prototype.calculateCastleKing = function(piece) {
+  var newPos = {
+    x: piece.pos.x,
+    y: piece.pos.y
+  }
+  var newPos2 = {
+    x: piece.pos.x,
+    y: ""
+  }
+  if (this.board[newPos.x][newPos.y].firstmove) {
+    // check right castle
+    newPos2.y = newPos.y + 3;
+    if (this.board[newPos2.x][newPos2.y] && this.board[newPos2.x][newPos2.y].type == "rook") {
+      var king = this.board[newPos.x][newPos.y];
+      var rook = this.board[newPos2.x][newPos2.y];
+
+      if (rook.firstmove && !this.areTherePiecesBetween(newPos, newPos2)) {
+        this.validMoves.push(new Position(newPos.x, newPos.y + 2));
+      }
+    }
+
+    // check left castle
+    newPos2.y = newPos.y - 4;
+    if (this.board[newPos2.x][newPos2.y] && this.board[newPos2.x][newPos2.y].type == "rook") {
+      var king = this.board[newPos.x][newPos.y];
+      var rook = this.board[newPos2.x][newPos2.y];
+
+      if (rook.firstmove && !this.areTherePiecesBetween(newPos, newPos2)) {
+        this.validMoves.push(new Position(newPos.x, newPos.y - 2));
+      }
+    }
+  }
+}
+
+// This method only checks horizontally 
+Chess.prototype.areTherePiecesBetween = function(pos1, pos2) {
+  if (!pos1 || !pos2 || pos1.x != pos2.x) {
+    return false;
+  }
+  if (pos1.y > pos2.y) {
+    var temp = pos1;
+    pos1 = pos2;
+    pos2 = temp;
+  }
+  for (var i = pos1.y + 1; i < pos2.y; i++) {
+    if (this.board[pos1.x][i]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+Chess.prototype.calculateKingMoves = function(piece) {
+  if (piece.color == "white") {
+    oppositeColor = "black"
+  } else {
+    oppositeColor = "white"
+  }
+  var newPos = {
+    x: "",
+    y: ""
+  }
+  var newPos2 = {
+    x: "",
+    y: ""
+  }
+  newPos.x = piece.pos.x
+  newPos.y = piece.pos.y
+  newPos2.x = newPos.x - 1
+  if (this.isPositionOnBoard(new Position(newPos2.x, newPos.y)) == false) {} else if (this.board[newPos2.x][newPos.y] == null) {
+    this.validMoves.push(new Position(newPos2.x, newPos.y))
+  } else {
+    if (this.board[newPos2.x][newPos.y].color == oppositeColor) {
+      this.validMoves.push(new Position(newPos2.x, newPos.y))
+    }
+  }
+  newPos2.x = newPos.x - 1
+  newPos2.y = newPos.y - 1
+  if (this.isPositionOnBoard(new Position(newPos2.x, newPos2.y)) == false) {} else if (this.board[newPos2.x][newPos2.y] == null) {
+    this.validMoves.push(new Position(newPos2.x, newPos2.y))
+  } else {
+    if (this.board[newPos2.x][newPos2.y].color == oppositeColor) {
+      this.validMoves.push(new Position(newPos2.x, newPos2.y))
+    }
+  }
+  newPos2.x = newPos.x - 1
+  newPos2.y = newPos.y + 1
+  if (this.isPositionOnBoard(new Position(newPos2.x, newPos2.y)) == false) {} else if (this.board[newPos2.x][newPos2.y] == null) {
+    this.validMoves.push(new Position(newPos2.x, newPos2.y))
+  } else {
+    if (this.board[newPos2.x][newPos2.y].color == oppositeColor) {
+      this.validMoves.push(new Position(newPos2.x, newPos2.y))
+    }
+  }
+  newPos2.y = newPos.y - 1
+  if (this.isPositionOnBoard(new Position(newPos.x, newPos2.y)) == false) {} else if (this.board[newPos.x][newPos2.y] == null) {
+    this.validMoves.push(new Position(newPos.x, newPos2.y))
+  } else {
+    if (this.board[newPos.x][newPos2.y].color == oppositeColor) {
+      this.validMoves.push(new Position(newPos.x, newPos2.y))
+    }
+  }
+  newPos2.y = newPos.y + 1
+  if (this.isPositionOnBoard(new Position(newPos.x, newPos2.y)) == false) {} else if (this.board[newPos.x][newPos2.y] == null) {
+    this.validMoves.push(new Position(newPos.x, newPos2.y))
+  } else {
+    if (this.board[newPos.x][newPos.y].color == oppositeColor) {
+      this.validMoves.push(new Position(newPos.x, newPos2.y))
+    }
+  }
+  newPos2.x = newPos.x + 1
+  if (this.isPositionOnBoard(new Position(newPos2.x, newPos.y)) == false) {} else if (this.board[newPos2.x][newPos.y] == null) {
+    this.validMoves.push(new Position(newPos2.x, newPos.y))
+  } else {
+    if (this.board[newPos2.x][newPos.y].color == oppositeColor) {
+      this.validMoves.push(new Position(newPos2.x, newPos.y))
+    }
+  }
+  newPos2.x = newPos.x + 1
+  newPos2.y = newPos.y + 1
+  if (this.isPositionOnBoard(new Position(newPos2.x, newPos2.y)) == false) {} else if (this.board[newPos2.x][newPos2.y] == null) {
+    this.validMoves.push(new Position(newPos2.x, newPos2.y))
+  } else {
+    if (this.board[newPos2.x][newPos2.y].color == oppositeColor) {
+      this.validMoves.push(new Position(newPos2.x, newPos2.y))
+    }
+  }
+  newPos2.x = newPos.x + 1
+  newPos2.y = newPos.y - 1
+  if (this.isPositionOnBoard(new Position(newPos2.x, newPos2.y)) == false) {} else if (this.board[newPos2.x][newPos2.y] == null) {
+    this.validMoves.push(new Position(newPos2.x, newPos2.y))
+  } else {
+    if (this.board[newPos2.x][newPos2.y].color == oppositeColor) {
+      this.validMoves.push(new Position(newPos2.x, newPos2.y))
+    }
+  }
+  this.calculateCastleKing(piece);
+}
+Chess.prototype.render = function() {
+  var color = null;
+  var type = null;
+  for (var i = 0; i < this.board.length; i++) {
+    for (var j = 0; j < this.board[i].length; j++) {
+      var cell = this.getCell(i, j);
+      var effectiveI = this.turn == 'white' ? i : 7 - i;
+      var effectiveJ = this.turn == 'white' ? j : 7 - j;
+      cell.setAttribute('row', effectiveI + '');
+      cell.setAttribute('col', effectiveJ + '');
+      if (this.board[effectiveI][effectiveJ]) {
+        var image = this.getImage(i, j);
+        image.src = this.board[effectiveI][effectiveJ].url;
+        image.width = 40;
+        if (this.board[effectiveI][effectiveJ].selected) {
+          image.border = 1;
+        } else {
+          image.border = 0;
+        }
+      } else {
+        this.getImage(i, j).src = '';
+      }
+      if (this.isValidMove(effectiveI, effectiveJ)) {
+        cell.classList.add('dot');
+      } else {
+        cell.classList.remove('dot');
+      }
+    }
+  }
+  var capturedPiecesCopy = {
+    white: {
+      pawn:this.capturedPieces.white.pawn,
+      rook:this.capturedPieces.white.rook,
+      knight:this.capturedPieces.white.knight,
+      bishop:this.capturedPieces.white.bishop,
+      queen:this.capturedPieces.white.queen
+    },
+    black: {
+      pawn:this.capturedPieces.black.pawn,
+      rook:this.capturedPieces.black.rook,
+      knight:this.capturedPieces.black.knight,
+      bishop:this.capturedPieces.black.bishop,
+      queen:this.capturedPieces.black.queen
+    }
+  }
+  for (var i = 0; i < 8; i++) {
+    for (var j = 0; j < 4; j++) {
+      if (document.getElementById("captured_img_" + i + "_" + j).src != "") {
+        type = document.getElementById("captured_img_" + i + "_" + j).getAttribute('type')
+        color = document.getElementById("captured_img_" + i + "_" + j).getAttribute('color')
+        if (capturedPiecesCopy[color][type] > 0) {
+          document.getElementById("captured_img_" + i + "_" + j).style.display = "block"
+          capturedPiecesCopy[color][type] -= 1
+        } else {
+          document.getElementById("captured_img_" + i + "_" + j).style.display = "none"
+        }
+      }
+    }
+  }
+}
+
+Chess.prototype.getImage = function(x, y) {
+  return document.getElementById('img_' + x + '_' + y);
+}
+
+Chess.prototype.getCell = function(x, y) {
+  return document.getElementById('cell_' + x + '_' + y);
+}
+Chess.prototype.resetGame = function() {
+  var chess = new Chess();
+  this.hideElement("blackWins")
+  this.hideElement("whiteWins")
+  this.showElement("backToPlayers")
+}
+
+Chess.prototype.submitPlayers = function() {
+  this.player1 = document.getElementById("firstPlayerName").value
+  this.player2 = document.getElementById("secondPlayerName").value
+  this.hideElement("namesForGame")
+  this.showElement("black/white")
+  this.showElement("backToPlayers")
+}
+Chess.prototype.submitColors = function() {
+  if (this.player1 == document.getElementById("black").value && this.player2 == document.getElementById("white").value) {
+    this.player2 = document.getElementById("black").value;
+    this.player1 = document.getElementById("white").value;
+  } else if (this.player1 == document.getElementById("white").value && this.player2 == document.getElementById("black").value) {} else {
+    this.showElement("passValidNames")
+    this.hideElement("chessGame")
+  }
+  this.hideElement("black/white")
+  this.hideElement("backToPlayers")
+  this.showElement("chessGame")
+}
+Chess.prototype.backToColors = function() {
+  this.showElement("black/white")
+  this.hideElement("chessGame")
+}
+Chess.prototype.backToPlayers = function() {
+  this.hideElement("black/white")
+  this.showElement("namesForGame")
+  this.hideElement("backToPlayers")
+  this.hideElement("chessGame")
+  this.showElemnt("skipNames")
+}
+Chess.prototype.skipNames = function() {
+  this.hideElement("black/white")
+  this.hideElement("namesForGame")
+  this.hideElement("backToPlayers")
+  this.showElement("chessGame")
+  this.hideElement("skipNames")
+}  
+</script>
+  </head>
+
+  <body style="background-color:gold;">
+    <div id="chess" style="display:block">
+      <div id="namesForGame" style="display:block">
+        <h2 style="color:blue">
+          What is the first players name
+          <input type="text" id="firstPlayerName" />
+          <br />
+          What is the second players name
+          <input type="text" id="secondPlayerName" />
+          <br />
+          <input type="submit" onclick="chess.submitPlayers()" />
+        </h2>
+      </div>
+      <div id="black/white" style="display:none">
+        <h2 style="color:white">
+          Which player wants to be white
+          <input type="text" id="white" />
+          <br />
+        </h2>  
+        <h2 style="color:black">
+          Which player wants to be black
+          <input type="text" id="black" />
+        </h2>
+        <input type="submit" onclick="chess.submitColors()" />
+      </div>
+      <div id="passValidNames" style="display:none">
+        <h1 style="color:red">
+          Alert: Pass in valid name(s)
+        </h1>
+        <input type="button" value="Ok" onclick="chess.backToColors()" />
+      </div>
+      <div id="winner?">
+        <div id="blackWins" style="display:none">
+          <h2 style="color:blue">
+            <strong>
+              Black has won, good luck next game!
+            </strong>
+          </h2>
+        </div>
+        <div id="whiteWins" style="display:none">
+          <h2 style="color:purple">
+            <strong>
+              White has won, good luck next game!
+            </strong>
+          </h2>
+        </div>
+      </div>
+       <input type="button" value="Skip" onclick="chess.skipNames()" id="skipNames" />
+      <input type="button" value="<-- Back" onclick="chess.backToPlayers()" style="display:none" id="backToPlayers">
+      <div id="chessGame" style="display:none">
+  <table cellspacing="0" cellpadding="10" border="1" style="float: left;">
+          <tbody>
+            <tr>
+              <td class="white" id="cell_0_0">
+                <img id="img_0_0" src="" />
+              </td>
+              <td class="black" id="cell_0_1">
+                <img id="img_0_1" src="" />
+              </td>
+              <td class="white" id="cell_0_2">
+                <img id="img_0_2" src="" />
+              </td>
+              <td class="black" id="cell_0_3">
+                <img id="img_0_3" src="" />
+              </td>
+              <td class="white" id="cell_0_4">
+                <img id="img_0_4" src="" />
+              </td>
+              <td class="black" id="cell_0_5">
+                <img id="img_0_5" src="" />
+              </td>
+              <td class="white" id="cell_0_6">
+                <img id="img_0_6" src="" />
+              </td>
+              <td class="black" id="cell_0_7">
+                <img id="img_0_7" src="" />
+              </td>
+            </tr>
+            <tr>
+              <td class="black" id="cell_1_0">
+                <img id="img_1_0" src="" />
+              </td>
+              <td class="white" id="cell_1_1">
+                <img id="img_1_1" src="" />
+              </td>
+              <td class="black" id="cell_1_2">
+                <img id="img_1_2" src="" />
+              </td>
+              <td class="white" id="cell_1_3">
+                <img id="img_1_3" src="" />
+              </td>
+              <td class="black" id="cell_1_4">
+                <img id="img_1_4" src="" />
+              </td>
+              <td class="white" id="cell_1_5">
+                <img id="img_1_5" src="" />
+              </td>
+              <td class="black" id="cell_1_6">
+                <img id="img_1_6" src="" />
+              </td>
+              <td class="white" id="cell_1_7">
+                <img id="img_1_7" src="" />
+              </td>
+            </tr>
+            <tr>
+              <td class="white" id="cell_2_0">
+                <img id="img_2_0" src="" />
+              </td>
+              <td class="black" id="cell_2_1">
+                <img id="img_2_1" src="" />
+              </td>
+              <td class="white" id="cell_2_2">
+                <img id="img_2_2" src="" />
+              </td>
+              <td class="black" id="cell_2_3">
+                <img id="img_2_3" src="" />
+              </td>
+              <td class="white" id="cell_2_4">
+                <img id="img_2_4" src="" />
+              </td>
+              <td class="black" id="cell_2_5">
+                <img id="img_2_5" src="" />
+              </td>
+              <td class="white" id="cell_2_6">
+                <img id="img_2_6" src="" />
+              </td>
+              <td class="black" id="cell_2_7">
+                <img id="img_2_7" src="" />
+              </td>
+            </tr>
+            <tr>
+              <td class="black" id="cell_3_0">
+                <img id="img_3_0" src="" />
+              </td>
+              <td class="white" id="cell_3_1">
+                <img id="img_3_1" src="" />
+              </td>
+              <td class="black" id="cell_3_2">
+                <img id="img_3_2" src="" />
+              </td>
+              <td class="white" id="cell_3_3">
+                <img id="img_3_3" src="" />
+              </td>
+              <td class="black" id="cell_3_4">
+                <img id="img_3_4" src="" />
+              </td>
+              <td class="white" id="cell_3_5">
+                <img id="img_3_5" src="" />
+              </td>
+              <td class="black" id="cell_3_6">
+                <img id="img_3_6" src="" />
+              </td>
+              <td class="white" id="cell_3_7">
+                <img id="img_3_7" src="" />
+              </td>
+            </tr>
+            <tr>
+              <td class="white" id="cell_4_0">
+                <img id="img_4_0" src="" />
+              </td>
+              <td class="black" id="cell_4_1">
+                <img id="img_4_1" src="" />
+              </td>
+              <td class="white" id="cell_4_2">
+                <img id="img_4_2" src="" />
+              </td>
+              <td class="black" id="cell_4_3">
+                <img id="img_4_3" src="" />
+              </td>
+              <td class="white" id="cell_4_4">
+                <img id="img_4_4" src="" />
+              </td>
+              <td class="black" id="cell_4_5">
+                <img id="img_4_5" src="" />
+              </td>
+              <td class="white" id="cell_4_6">
+                <img id="img_4_6" src="" />
+              </td>
+              <td class="black" id="cell_4_7">
+                <img id="img_4_7" src="" />
+              </td>
+            </tr>
+            <tr>
+              <td class="black" id="cell_5_0">
+                <img id="img_5_0" src="" />
+              </td>
+              <td class="white" id="cell_5_1">
+                <img id="img_5_1" src="" />
+              </td>
+              <td class="black" id="cell_5_2">
+                <img id="img_5_2" src="" />
+              </td>
+              <td class="white" id="cell_5_3">
+                <img id="img_5_3" src="" />
+              </td>
+              <td class="black" id="cell_5_4">
+                <img id="img_5_4" src="" />
+              </td>
+              <td class="white" id="cell_5_5">
+                <img id="img_5_5" src="" />
+              </td>
+              <td class="black" id="cell_5_6">
+                <img id="img_5_6" src="" />
+              </td>
+              <td class="white" id="cell_5_7">
+                <img id="img_5_7" src="" />
+              </td>
+            </tr>
+            <tr>
+              <td class="white" id="cell_6_0">
+                <img id="img_6_0" src="" />
+              </td>
+              <td class="black" id="cell_6_1">
+                <img id="img_6_1" src="" />
+              </td>
+              <td class="white" id="cell_6_2">
+                <img id="img_6_2" src="" />
+              </td>
+              <td class="black" id="cell_6_3">
+                <img id="img_6_3" src="" />
+              </td>
+              <td class="white" id="cell_6_4">
+                <img id="img_6_4" src="" />
+              </td>
+              <td class="black" id="cell_6_5">
+                <img id="img_6_5" src="" />
+              </td>
+              <td class="white" id="cell_6_6">
+                <img id="img_6_6" src="" />
+              </td>
+              <td class="black" id="cell_6_7">
+                <img id="img_6_7" src="" />
+              </td>
+            </tr>
+            <tr>
+              <td class="black" id="cell_7_0">
+                <img id="img_7_0" src="" />
+              </td>
+              <td class="white" id="cell_7_1">
+                <img id="img_7_1" src="" />
+              </td>
+              <td class="black" id="cell_7_2">
+                <img id="img_7_2" src="" />
+              </td>
+              <td class="white" id="cell_7_3">
+                <img id="img_7_3" src="" />
+              </td>
+              <td class="black" id="cell_7_4">
+                <img id="img_7_4" src="" />
+              </td>
+              <td class="white" id="cell_7_5">
+                <img id="img_7_5" src="" />
+              </td>
+              <td class="black" id="cell_7_6">
+                <img id="img_7_6" src="" />
+              </td>
+              <td class="white" id="cell_7_7">
+                <img id="img_7_7" src="" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       <table cellspacing="0" cellpadding="10" border="1" style="display: inline-block;">
+          <tbody>
+            <tr>
+              <td class="white" id="captured_cell_0_0">
+                <img id="captured_img_0_0" color="black" type="rook" src="https://upload.wikimedia.org/wikipedia/commons/a/a0/Chess_rdt60.png" />
+              </td>
+              <td class="black" id="captured_cell_0_1">
+                <img id="captured_img_0_1" color="black" type="rook" src="https://upload.wikimedia.org/wikipedia/commons/a/a0/Chess_rdt60.png" />
+              </td>
+              <td class="white" id="captured_cell_0_2">
+                <img id="captured_img_0_2" color="black" type="knight" src="https://upload.wikimedia.org/wikipedia/commons/f/f1/Chess_ndt60.png" />
+              </td>
+              <td class="black" id="captured_cell_0_3">
+                <img id="captured_img_0_3" color="black" type="knight" src="https://upload.wikimedia.org/wikipedia/commons/f/f1/Chess_ndt60.png" />
+              </td>
+            </tr>
+            <tr>
+              <td class="black" id="captured_cell_1_0">
+                <img id="captured_img_1_0" color="black" type="bishop" src="https://upload.wikimedia.org/wikipedia/commons/8/81/Chess_bdt60.png" />
+              </td>
+              <td class="white" id="captured_cell_1_1">
+                <img id="captured_img_1_1" color="black" type="bishop" src="https://upload.wikimedia.org/wikipedia/commons/8/81/Chess_bdt60.png" />
+              </td>
+              <td class="black" id="captured_cell_1_2">
+                <img id="captured_img_1_2" color="black" type="queen" src="https://upload.wikimedia.org/wikipedia/commons/a/af/Chess_qdt60.png" />
+              </td>
+              <td class="white" id="captured_cell_1_3">
+                <img id="captured_img_1_3" />
+              </td>
+            </tr>
+            <tr>
+              <td class="white" id="captured_cell_2_0">
+                <img id="captured_img_2_0" color="black" type="pawn" src="https://upload.wikimedia.org/wikipedia/commons/c/cd/Chess_pdt60.png" />
+              </td>
+              <td class="black" id="captured_cell_2_1">
+                <img id="captured_img_2_1" color="black" type="pawn" src="https://upload.wikimedia.org/wikipedia/commons/c/cd/Chess_pdt60.png" />
+              </td>
+              <td class="white" id="captured_cell_2_2">
+                <img id="captured_img_2_2" color="black" type="pawn" src="https://upload.wikimedia.org/wikipedia/commons/c/cd/Chess_pdt60.png" />
+              </td>
+              <td class="black" id="captured_cell_2_3">
+                <img id="captured_img_2_3" color="black" type="pawn" src="https://upload.wikimedia.org/wikipedia/commons/c/cd/Chess_pdt60.png" />
+              </td>
+            </tr>
+            <tr>
+              <td class="black" id="captured_cell_3_0">
+                <img id="captured_img_3_0" color="black" type="pawn" src="https://upload.wikimedia.org/wikipedia/commons/c/cd/Chess_pdt60.png" />
+              </td>
+              <td class="white" id="captured_cell_3_1">
+                <img id="captured_img_3_1" color="black" type="pawn" src="https://upload.wikimedia.org/wikipedia/commons/c/cd/Chess_pdt60.png" />
+              </td>
+              <td class="black" id="captured_cell_3_2">
+                <img id="captured_img_3_2" color="black" type="pawn" src="https://upload.wikimedia.org/wikipedia/commons/c/cd/Chess_pdt60.png" />
+              </td>
+              <td class="white" id="captured_cell_3_3">
+                <img id="captured_img_3_3" color="black" type="pawn" src="https://upload.wikimedia.org/wikipedia/commons/c/cd/Chess_pdt60.png" />
+              </td>
+            </tr>
+            <tr>
+              <td class="white" id="captured_cell_4_0">
+                <img id="captured_img_4_0" color="white" type="rook" src="https://upload.wikimedia.org/wikipedia/commons/5/5c/Chess_rlt60.png" />
+              </td>
+              <td class="black" id="captured_cell_4_1">
+                <img id="captured_img_4_1" color="white" type="rook" src="https://upload.wikimedia.org/wikipedia/commons/5/5c/Chess_rlt60.png" />
+              </td>
+              <td class="white" id="captured_cell_4_2">
+                <img id="captured_img_4_2" color="white" type="knight" src="https://upload.wikimedia.org/wikipedia/commons/2/28/Chess_nlt60.png" />
+              </td>
+              <td class="black" id="captured_cell_4_3">
+                <img id="captured_img_4_3" color="white" type="knight" src="https://upload.wikimedia.org/wikipedia/commons/2/28/Chess_nlt60.png" />
+              </td>
+            </tr>
+            <tr>
+              <td class="black" id="captured_cell_5_0">
+                <img id="captured_img_5_0" color="white" type="bishop" src="https://upload.wikimedia.org/wikipedia/commons/9/9b/Chess_blt60.png" />
+              </td>
+              <td class="white" id="captured_cell_5_1">
+                <img id="captured_img_5_1" color="white" type="bishop" src="https://upload.wikimedia.org/wikipedia/commons/9/9b/Chess_blt60.png" />
+              </td>
+              <td class="black" id="captured_cell_5_2">
+                <img id="captured_img_5_2" color="white" type="queen" src="https://upload.wikimedia.org/wikipedia/commons/4/49/Chess_qlt60.png" />
+              </td>
+              <td class="white" id="captured_cell_5_3">
+                <img id="captured_img_5_3" />
+              </td>
+            </tr>
+            <tr>
+              <td class="white" id="captured_cell_6_0">
+                <img id="captured_img_6_0" color="white" type="pawn" src="https://upload.wikimedia.org/wikipedia/commons/0/04/Chess_plt60.png" />
+              </td>
+              <td class="black" id="captured_cell_6_1">
+                <img id="captured_img_6_1" color="white" type="pawn" src="https://upload.wikimedia.org/wikipedia/commons/0/04/Chess_plt60.png" />
+              </td>
+              <td class="white" id="captured_cell_6_2">
+                <img id="captured_img_6_2" color="white" type="pawn" src="https://upload.wikimedia.org/wikipedia/commons/0/04/Chess_plt60.png" />
+              </td>
+              <td class="black" id="captured_cell_6_3">
+                <img id="captured_img_6_3" color="white" type="pawn" src="https://upload.wikimedia.org/wikipedia/commons/0/04/Chess_plt60.png" />
+              </td>
+            </tr>
+            <tr>
+              <td class="black" id="captured_cell_7_0">
+                <img id="captured_img_7_0" color="white" type="pawn" src="https://upload.wikimedia.org/wikipedia/commons/0/04/Chess_plt60.png" />
+              </td>
+              <td class="white" id="captured_cell_7_1">
+                <img id="captured_img_7_1" color="white" type="pawn" src="https://upload.wikimedia.org/wikipedia/commons/0/04/Chess_plt60.png" />
+              </td>
+              <td class="black" id="captured_cell_7_2">
+                <img id="captured_img_7_2" color="white" type="pawn" src="https://upload.wikimedia.org/wikipedia/commons/0/04/Chess_plt60.png" />
+              </td>
+              <td class="white" id="captured_cell_7_3">
+                <img id="captured_img_7_3" color="white" type="pawn" src="https://upload.wikimedia.org/wikipedia/commons/0/04/Chess_plt60.png" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <br/>
+        <br>
+        <input type="button" value="Reset Game" onclick="chess.resetGame()">
+      </div>
+    </div>
+  </body>
+</html>
+<script type="text/javascript">
+  var chess = new Chess();
+</script>
