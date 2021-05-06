@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <title>Checkers</title>
+<style type="text/css">
+.red {
+  background-color: red;
+  width: 40px;
+  height: 40px;
+}
+
+.black {
+  background-color: black;
+  width: 40px;
+  height: 40px;
+}
+.validMoves {
+    background-color: rgba(0,255,0);
+}
+</style>
+<script type="text/javascript">
+var BOARD_SIZE = 8;
+var home = "file:///home/chronos/u-ac433ebf84a5304cffd17fdef62bcdb8294d57ef/MyFiles/New%20folder/programming/checkers.html"
+var Piece = function(color) {
+  this.color = color;
+  this.isSelected = false;
+	this.isKinged = false;
+}
+var Checkers = function () {
+	  this.turn = "red";
+	  this.selectedX = -1;
+	  this.selectedY = -1;
+	  this.validMoves = [];
+	  this.possibleCapture = [];
+		this.board = [];
+		for (var i = 0; i < 8; i++) {
+			this.board.push(new Array(8));
+		}
+		var myCheckers = this;
+	  myCheckers.setUpBoard();
+	  myCheckers.render();
+		for (var i = 0; i < 8; i++) {
+		  for (var j = 0; j < 8; j++) {
+			  var cell = this.getCell(i,j);
+				cell.setAttribute('x', i);
+				cell.setAttribute('y', j);
+				cell.addEventListener("click", function(e) {
+					var x = this.getAttribute('x');
+					var y = this.getAttribute('y');
+					x = parseInt(x);
+					y = parseInt(y);
+					myCheckers.handleClick(x, y);
+        });
+			};
+		};
+	};
+Checkers.prototype.setUpBoard = function () {
+  this.board[0][1] = new Piece("white");
+	this.board[0][3] = new Piece("white");
+  this.board[0][5] = new Piece("white");
+	this.board[0][7] = new Piece("white");
+  this.board[1][0] = new Piece("white");
+	this.board[1][2] = new Piece("white");
+  this.board[1][4] = new Piece("white");
+	this.board[1][6] = new Piece("white");
+  this.board[2][1] = new Piece("white");
+	this.board[2][3] = new Piece("white");
+  this.board[2][5] = new Piece("white");
+	this.board[2][7] = new Piece("white");
+  this.board[5][0] = new Piece("red");
+	this.board[5][2] = new Piece("red");
+  this.board[5][4] = new Piece("red");
+	this.board[5][6] = new Piece("red");
+  this.board[6][1] = new Piece("red");
+	this.board[6][3] = new Piece("red");
+  this.board[6][5] = new Piece("red");
+	this.board[6][7] = new Piece("red");
+  this.board[7][0] = new Piece("red");
+	this.board[7][2] = new Piece("red");
+  this.board[7][4] = new Piece("red");
+	this.board[7][6] = new Piece("red");
+};
+Checkers.prototype.changeTurn = function () {
+  if (this.turn == "red") {
+	  this.turn = "white";
+	} else {
+	  this.turn = "red";
+	}
+}
+Checkers.prototype.promoteChecker = function () {
+	for (var i = 0; i < BOARD_SIZE; i++) {
+	  if (this.board[0][i] != null && this.board[0][i].color == "red") {
+		  this.board[0][i].isKinged = true;
+		}
+	  if (this.board[7][i] != null && this.board[7][i].color == "white") {
+		  this.board[7][i].isKinged = true;
+		}
+	}
+}
+Checkers.prototype.handleClick = function (x, y) {
+	if (this.board[x][y] == null) {
+		//place piece
+		if (this.isValid(x, y)) {
+		  this.board[this.selectedX][this.selectedY].isSelected = false;
+		  this.placePiece(this.board[this.selectedX][this.selectedY].color, x, y, this.selectedX, this.selectedY)
+			this.findWhatToFlip(x,y);
+		  this.selectedX = -1;
+		  this.selectedY = -1;
+		  this.validMoves = [];
+	    this.board[x][y].isSelected = false;
+		  this.changeTurn();
+			this.promoteChecker();
+		}
+	} else if (this.board[x][y].isSelected == false) {
+		  //select piece
+		  if (!this.isAPieceAlreadySelected()) {
+				if (this.turn == this.board[x][y].color) {
+					this.selectedX = x;
+					this.selectedY = y;
+					this.board[x][y].isSelected = true;
+					this.findValidMoves(x, y, true, "");
+				}
+			}
+	} else {
+		//deselect piece
+		this.board[x][y].isSelected = false;
+		this.validMoves = [];
+	}
+	this.render();
+};
+Checkers.prototype.findValidMoves = function (x, y, firstTime, possible) {
+	var oppositeColor = (this.board[x][y].color == "red") ? "white" : "red";
+	if (oppositeColor == "white" || this.board[x][y].isKinged) {
+	  if (this.isOnBoard(x-1, y+1) && this.board[x-1][y+1] != null && this.board[x-1][y+1].color == oppositeColor) {
+			if (this.isOnBoard(x-2, y+2) && this.board[x-2][y+2] == null) {
+				this.validMoves.push({x: x - 2, y: y + 2})
+		  }
+		} else if (this.isOnBoard(x-1, y+1) && this.board[x-1][y+1] == null && firstTime) {
+		    this.validMoves.push({x: x - 1, y: y + 1})
+		}
+		if (this.isOnBoard(x-1, y-1) && this.board[x-1][y-1] != null && this.board[x-1][y-1].color == oppositeColor) {
+			if (this.isOnBoard(x-2, y-2) && this.board[x-2][y-2] == null) {
+				this.validMoves.push({x: x - 2, y: y - 2})
+			}
+		} else if (this.isOnBoard(x-1, y-1) && this.board[x-1][y-1] == null && firstTime) {
+			  this.validMoves.push({x: x - 1, y: y - 1})
+		}
+	} else {
+	  if (this.isOnBoard(x+1, y+1) && this.board[x+1][y+1] != null && this.board[x+1][y+1].color == oppositeColor) {
+			if (this.isOnBoard(x+2, y+2) && this.board[x+2][y+2] == null) {
+				this.validMoves.push({x: x + 2, y: y + 2})
+		  }
+		} else if (this.isOnBoard(x+1, y+1) && this.board[x+1][y+1] == null && firstTime) {
+		    this.validMoves.push({x: x + 1, y: y + 1})
+		}
+		if (this.isOnBoard(x+1, y-1) && this.board[x+1][y-1] != null && this.board[x+1][y-1].color == oppositeColor) {
+			if (this.isOnBoard(x+2, y-2) && this.board[x+2][y-2] == null) {
+				this.validMoves.push({x: x + 2, y: y - 2})
+			}
+		} else if (this.isOnBoard(x+1, y-1) && this.board[x+1][y-1] == null && firstTime) {
+			  this.validMoves.push({x: x + 1, y: y - 1})
+		}
+	}
+}
+Checkers.prototype.whoWon = function (color) {
+	document.getElementById("winner").style = "color:blue; display: block";
+  if (color == "red") {
+	  document.getElementById("whoWon").innerHTML = "Red";
+	} else if (color == "white") {
+		document.getElementById("whoWon").innerHTML = "White";
+	} else {
+	  document.getElementById("winner").style = "color:blue; display: none";
+	}
+};
+Checkers.prototype.isGameOver = function () {
+	var oppositeColor = (this.turn == "red") ? "white" : "red";
+	for (var i = 0; i < BOARD_SIZE; i++) {
+	  for (var j = 0; j < this.board[i].length; j++) {
+		  if (this.board[i][j] != null && this.board[i][j] != oppositeColor) {
+			}
+		}
+	}
+	if (this.validMoves == []) {
+	  this.whoWon(oppositeColor);
+	} else {
+		this.validMoves = [];
+	}
+};
+Checkers.prototype.isValid = function (x, y) {
+  for (var i = 0; i < this.validMoves.length; i++) {
+	  if (x == this.validMoves[i].x && y == this.validMoves[i].y) {
+			return true;
+		}
+	}
+}
+Checkers.prototype.isAPieceAlreadySelected = function () {
+  for (var i = 0; i < BOARD_SIZE; i++) {
+	  for (var j = 0; j < this.board[i].length; j++) {
+		  if (this.board[i][j] != null && this.board[i][j].isSelected) {
+			  return true;
+			}
+		}
+	}
+	return false;
+}
+Checkers.prototype.placePiece = function (color, x, y, ogX, ogY) {
+  this.board[x][y] = new Piece(color)
+	this.board[ogX][ogY] = null;
+}
+Checkers.prototype.findWhatToFlip = function (x, y) {
+	x = parseInt(x);
+	y = parseInt(y);
+	if (Math.abs(x - this.selectedX) == 1 && Math.abs(y - this.selectedY) == 1) {
+	} else {
+		if (this.turn == "red") {
+			for (var i = 1; i < Math.abs(x - this.selectedX); i++) {
+				if (Math.sign(this.selectedX - x) == 1 && Math.sign(this.selectedY - y) == 1) {
+				  this.board[x+i][y+i] = null;
+				} else {
+				  this.board[x+i][y-i] = null;
+				}
+			}
+		} else {
+			for (var i = 1; i < Math.abs(x - this.selectedX); i++) {
+				if (Math.sign(this.selectedX - x) == -1 && Math.sign(this.selectedY - y) == 1) {
+				  this.board[x-i][y+i] = null;
+				} else {
+				  this.board[x-i][y-i] = null;
+				}
+			}
+		}
+	}
+}
+Checkers.prototype.isOnBoard = function (x,y) {
+  if (x >= 0 && x < BOARD_SIZE) {
+	  if (y >= 0 && y < BOARD_SIZE) {
+		  return true;
+		}
+	}
+	return false
+}
+Checkers.prototype.render = function () {
+  for (var i = 0; i < 8; i++) {
+	  for (var j = 0; j < 8; j++) {
+		  if (this.board[i][j] != null) {
+			  var image = this.getImage(i,j);
+				if (this.board[i][j].color == "white") {
+					if (this.board[i][j].isKinged) {
+					  image.src = "https://thumbs.dreamstime.com/z/white-button-chrome-frame-round-glass-shiny-d-icon-white-button-chrome-frame-round-glass-shiny-d-icon-vector-119061735.jpg"
+					} else {
+					  image.src = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Circle_-_black_simple.svg/768px-Circle_-_black_simple.svg.png";
+					}
+				} else if (this.board[i][j].color == "red") {
+					if (this.board[i][j].isKinged) {
+						image.src = "https://img.favpng.com/22/11/0/circle-design-product-png-favpng-j80D5aX6iXBz670iZxwZRgSpj.jpg"
+					} else {
+					  image.src = "http://assets.stickpng.com/images/58afdad6829958a978a4a693.png";
+					}
+				}
+				image.height = 50;
+				image.width = 50;
+				if (this.board[i][j].isSelected) {
+					var cell = this.getCell(i,j);
+					cell.style.borderWidth = "medium";
+					cell.style.borderColor = "blue";
+					cell.style.borderStyle = "solid";
+				} else {
+				  var cell = this.getCell(i,j)
+				  cell.style.borderStyle = "none";
+					cell.style.borderColor = "none";
+					cell.style.borderStyle = "none";
+				}
+				  this.showOrHideValidMove();
+			} else {
+				var cell = this.getCell(i,j)
+				var image = this.getImage(i, j);
+				cell.style.borderStyle = "none";
+				cell.style.borderColor = "none";
+				cell.style.borderStyle = "none";
+				if (this.board[i][j] == null && document.getElementById(image.src) != home) {
+				  image.src = "https://www.transparenttextures.com/patterns/debut-light.png";
+				image.height = 50;
+				image.width = 50;
+				}
+			}
+		}
+	}
+};
+Checkers.prototype.showOrHideValidMove = function (x, y) {
+  for (var i = 0; i < 8; i++) {
+	  for (var j = 0; j < 8; j++) {
+		  var cell = this.getCell(i, j)
+			if (i % 2 == 0) {
+			  if (j % 2 == 0) {
+				  cell.className = "red";
+				} else {
+				  cell.className = "black";
+				}
+			} else {
+			  if (j % 2 == 0) {
+				  cell.className = "black";
+				} else {
+				  cell.className = "red";
+				}
+			}
+		}
+	}
+	for (var i = 0; i < this.validMoves.length; i++) {
+		var cell = this.getCell(this.validMoves[i].x, this.validMoves[i].y)
+		if (cell != null) {
+			cell.className = "validMoves";
+		}
+	}
+}
+Checkers.prototype.getImage = function(x, y) {
+  return document.getElementById('img_' + x + '_' + y);
+}
+Checkers.prototype.getCell = function(x, y) {
+  return document.getElementById('cell_' + x + '_' + y);
+}
+</script>
+  </head>
+		<h2 style = "color:blue; display: none" id = "winner">
+		The winner is: <span id="whoWon"></span>
+	</h2>
+  <body style="background-color:gold;">
+  <table cellspacing="0" cellpadding="10" border="1" style="float: left;">
+          <tbody>
+            <tr>
+              <td class="red" id="cell_0_0">
+                <img id="img_0_0" src="" />
+              </td>
+              <td class="black" id="cell_0_1">
+                <img id="img_0_1" src="" />
+              </td>
+              <td class="red" id="cell_0_2">
+                <img id="img_0_2" src="" />
+              </td>
+              <td class="black" id="cell_0_3">
+                <img id="img_0_3" src="" />
+              </td>
+              <td class="red" id="cell_0_4">
+                <img id="img_0_4" src="" />
+              </td>
+              <td class="black" id="cell_0_5">
+                <img id="img_0_5" src="" />
+              </td>
+              <td class="red" id="cell_0_6">
+                <img id="img_0_6" src="" />
+              </td>
+              <td class="black" id="cell_0_7">
+                <img id="img_0_7" src="" />
+              </td>
+            </tr>
+            <tr>
+              <td class="black" id="cell_1_0">
+                <img id="img_1_0" src="" />
+              </td>
+              <td class="red" id="cell_1_1">
+                <img id="img_1_1" src="" />
+              </td>
+              <td class="black" id="cell_1_2">
+                <img id="img_1_2" src="" />
+              </td>
+              <td class="red" id="cell_1_3">
+                <img id="img_1_3" src="" />
+              </td>
+              <td class="black" id="cell_1_4">
+                <img id="img_1_4" src="" />
+              </td>
+              <td class="red" id="cell_1_5">
+                <img id="img_1_5" src="" />
+              </td>
+              <td class="black" id="cell_1_6">
+                <img id="img_1_6" src="" />
+              </td>
+              <td class="red" id="cell_1_7">
+                <img id="img_1_7" src="" />
+              </td>
+            </tr>
+            <tr>
+              <td class="red" id="cell_2_0">
+                <img id="img_2_0" src="" />
+              </td>
+              <td class="black" id="cell_2_1">
+                <img id="img_2_1" src="" />
+              </td>
+              <td class="red" id="cell_2_2">
+                <img id="img_2_2" src="" />
+              </td>
+              <td class="black" id="cell_2_3">
+                <img id="img_2_3" src="" />
+              </td>
+              <td class="red" id="cell_2_4">
+                <img id="img_2_4" src="" />
+              </td>
+              <td class="black" id="cell_2_5">
+                <img id="img_2_5" src="" />
+              </td>
+              <td class="red" id="cell_2_6">
+                <img id="img_2_6" src="" />
+              </td>
+              <td class="black" id="cell_2_7">
+                <img id="img_2_7" src="" />
+              </td>
+            </tr>
+            <tr>
+              <td class="black" id="cell_3_0">
+                <img id="img_3_0" src="" />
+              </td>
+              <td class="red" id="cell_3_1">
+                <img id="img_3_1" src="" />
+              </td>
+              <td class="black" id="cell_3_2">
+                <img id="img_3_2" src="" />
+              </td>
+              <td class="red" id="cell_3_3">
+                <img id="img_3_3" src="" />
+              </td>
+              <td class="black" id="cell_3_4">
+                <img id="img_3_4" src="" />
+              </td>
+              <td class="red" id="cell_3_5">
+                <img id="img_3_5" src="" />
+              </td>
+              <td class="black" id="cell_3_6">
+                <img id="img_3_6" src="" />
+              </td>
+              <td class="red" id="cell_3_7">
+                <img id="img_3_7" src="" />
+              </td>
+            </tr>
+            <tr>
+              <td class="red" id="cell_4_0">
+                <img id="img_4_0" src="" />
+              </td>
+              <td class="black" id="cell_4_1">
+                <img id="img_4_1" src="" />
+              </td>
+              <td class="red" id="cell_4_2">
+                <img id="img_4_2" src="" />
+              </td>
+              <td class="black" id="cell_4_3">
+                <img id="img_4_3" src="" />
+              </td>
+              <td class="red" id="cell_4_4">
+                <img id="img_4_4" src="" />
+              </td>
+              <td class="black" id="cell_4_5">
+                <img id="img_4_5" src="" />
+              </td>
+              <td class="red" id="cell_4_6">
+                <img id="img_4_6" src="" />
+              </td>
+              <td class="black" id="cell_4_7">
+                <img id="img_4_7" src="" />
+              </td>
+            </tr>
+            <tr>
+              <td class="black" id="cell_5_0">
+                <img id="img_5_0" src="" />
+              </td>
+              <td class="red" id="cell_5_1">
+                <img id="img_5_1" src="" />
+              </td>
+              <td class="black" id="cell_5_2">
+                <img id="img_5_2" src="" />
+              </td>
+              <td class="red" id="cell_5_3">
+                <img id="img_5_3" src="" />
+              </td>
+              <td class="black" id="cell_5_4">
+                <img id="img_5_4" src="" />
+              </td>
+              <td class="red" id="cell_5_5">
+                <img id="img_5_5" src="" />
+              </td>
+              <td class="black" id="cell_5_6">
+                <img id="img_5_6" src="" />
+              </td>
+              <td class="red" id="cell_5_7">
+                <img id="img_5_7" src="" />
+              </td>
+            </tr>
+            <tr>
+              <td class="red" id="cell_6_0">
+                <img id="img_6_0" src="" />
+              </td>
+              <td class="black" id="cell_6_1">
+                <img id="img_6_1" src="" />
+              </td>
+              <td class="red" id="cell_6_2">
+                <img id="img_6_2" src="" />
+              </td>
+              <td class="black" id="cell_6_3">
+                <img id="img_6_3" src="" />
+              </td>
+              <td class="red" id="cell_6_4">
+                <img id="img_6_4" src="" />
+              </td>
+              <td class="black" id="cell_6_5">
+                <img id="img_6_5" src="" />
+              </td>
+              <td class="red" id="cell_6_6">
+                <img id="img_6_6" src="" />
+              </td>
+              <td class="black" id="cell_6_7">
+                <img id="img_6_7" src="" />
+              </td>
+            </tr>
+            <tr>
+              <td class="black" id="cell_7_0">
+                <img id="img_7_0" src="" />
+              </td>
+              <td class="red" id="cell_7_1">
+                <img id="img_7_1" src="" />
+              </td>
+              <td class="black" id="cell_7_2">
+                <img id="img_7_2" src="" />
+              </td>
+              <td class="red" id="cell_7_3">
+                <img id="img_7_3" src="" />
+              </td>
+              <td class="black" id="cell_7_4">
+                <img id="img_7_4" src="" />
+              </td>
+              <td class="red" id="cell_7_5">
+                <img id="img_7_5" src="" />
+              </td>
+              <td class="black" id="cell_7_6">
+                <img id="img_7_6" src="" />
+              </td>
+              <td class="red" id="cell_7_7">
+                <img id="img_7_7" src="" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
+<script type="text/javascript">
+  var checkers = new Checkers();
+</script>
