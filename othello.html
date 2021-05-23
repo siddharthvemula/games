@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Page Title</title>
+    <title>Othello</title>
 <style type="text/css">
 .green {
   background-color: limegreen;
@@ -15,6 +15,7 @@
 	<h2 style = "color:blue; display: none" id = "winner">
 		The winner is: <span id="whoWon"></span>
 	</h2>
+	<body style="background-color:gold;">
   <table cellspacing="0" cellpadding="10" border="1" style="float: left;">
           <tbody>
             <tr>
@@ -227,6 +228,16 @@
             </tr>
           </tbody>
         </table>
+			  <br>
+		    <br>
+		    <br>
+		    <br>
+		    <br>
+		    <br>
+		    <br>
+		    <textarea id="state" rows="20" cols="100">
+				</textarea>
+	<button type="button" onclick="restore()">Restore</button>
   </body>
 </html>
 <script type="text/javascript">
@@ -252,6 +263,19 @@
 			};
 		};
 	};
+Othello.prototype.printState = function () {
+	var state = {
+		board: this.board,
+		turn: this.turn,
+	};
+  document.getElementById("state").value = JSON.stringify(state);
+}
+function restore () {
+	var othello = new Othello();
+	othello.turn = JSON.parse(document.getElementById("state").value).turn
+	othello.board = JSON.parse(document.getElementById("state").value).board
+	othello.render();
+}
 var Piece = function (color) {
   this.color = color;
 };
@@ -267,6 +291,7 @@ Othello.prototype.handleClick = function (x, y) {
 		this.checkIfFlip(x, y);
 		this.render();
 		this.isGameOver();
+		this.printState();
 	} else {
 		return;
 	};
