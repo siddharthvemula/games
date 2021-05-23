@@ -33,6 +33,7 @@ var Checkers = function () {
 	  this.selectedX = -1;
 	  this.selectedY = -1;
 	  this.validMoves = [];
+	  this.totalValid = 0;
 	  this.capture = false;
 		this.board = [];
 		for (var i = 0; i < 8; i++) {
@@ -127,10 +128,10 @@ Checkers.prototype.handleClick = function (x, y) {
 					this.board[x][y].locked = true;
 				  this.board[x][y].isSelected = true;
 				}
+				this.isGameOver();
 				this.captured = false;
 			}
 		}
-		this.isGameOver();
 	} else if (this.board[x][y].isSelected == false) {
 		  //select piece
 		  if (!this.isAPieceAlreadySelected()) {
@@ -138,6 +139,7 @@ Checkers.prototype.handleClick = function (x, y) {
 					this.selectedX = x;
 					this.selectedY = y;
 					this.board[x][y].isSelected = true;
+					this.findAllValid();
 					this.findValidMoves(x, y);
 				}
 			}
@@ -148,7 +150,9 @@ Checkers.prototype.handleClick = function (x, y) {
 		  this.validMoves = [];
 		}
 	}
+	this.isGameOver();
 	this.render();
+	this.printState();
 };
 Checkers.prototype.findValidMoves = function (x, y) {
 	var oppositeColor = (this.board[x][y].color == "red") ? "white" : "red";
@@ -156,41 +160,64 @@ Checkers.prototype.findValidMoves = function (x, y) {
 	  if (this.isOnBoard(x-1, y+1) && this.board[x-1][y+1] != null && this.board[x-1][y+1].color == oppositeColor) {
 			if (this.isOnBoard(x-2, y+2) && this.board[x-2][y+2] == null) {
 				this.validMoves.push({x: x - 2, y: y + 2})
+				this.totalValid++;
 		  }
 		} else if (this.isOnBoard(x-1, y+1) && this.board[x-1][y+1] == null && !this.captured) {
 		    this.validMoves.push({x: x - 1, y: y + 1})
+			  this.totalValid++;
 		}
 		if (this.isOnBoard(x-1, y-1) && this.board[x-1][y-1] != null && this.board[x-1][y-1].color == oppositeColor) {
 			if (this.isOnBoard(x-2, y-2) && this.board[x-2][y-2] == null) {
 				this.validMoves.push({x: x - 2, y: y - 2})
+				this.totalValid++;
 			}
 		} else if (this.isOnBoard(x-1, y-1) && this.board[x-1][y-1] == null && !this.captured) {
 			  this.validMoves.push({x: x - 1, y: y - 1})
+			  this.totalValid++;
 		}
 	}
 	if (oppositeColor == "red" || this.board[x][y].isKinged) {
 	  if (this.isOnBoard(x+1, y+1) && this.board[x+1][y+1] != null && this.board[x+1][y+1].color == oppositeColor) {
 			if (this.isOnBoard(x+2, y+2) && this.board[x+2][y+2] == null) {
 				this.validMoves.push({x: x + 2, y: y + 2})
+				this.totalValid++;
 		  }
 		} else if (this.isOnBoard(x+1, y+1) && this.board[x+1][y+1] == null && !this.captured) {
 		    this.validMoves.push({x: x + 1, y: y + 1})
+			  this.totalValid++;
 		}
 		if (this.isOnBoard(x+1, y-1) && this.board[x+1][y-1] != null && this.board[x+1][y-1].color == oppositeColor) {
 			if (this.isOnBoard(x+2, y-2) && this.board[x+2][y-2] == null) {
 				this.validMoves.push({x: x + 2, y: y - 2})
+				this.totalValid++;
 			}
 		} else if (this.isOnBoard(x+1, y-1) && this.board[x+1][y-1] == null && !this.captured) {
 			  this.validMoves.push({x: x + 1, y: y - 1})
+			  this.totalValid++;
 		}
 	}
 }
+Checkers.prototype.findAllValid = function () {
+	var oppositeColor = (this.turn == "red") ? "white" : "red";
+  for (var i = 0; i < BOARD_SIZE; i++) {
+	  for (var j = 0; j < BOARD_SIZE; j++) {
+			if (this.board[i][j] != null && this.board[i][j].color != oppositeColor) {
+				this.findValidMoves(i,j)
+				if (this.totalValid != 0) {
+					this.validMoves = [];
+					this.totalValid = 0;
+				  return;
+				}
+			}
+		}
+	}
+  this.displayWinner(oppositeColor)
+}
 Checkers.prototype.displayWinner = function (color) {
-	alert("In display")
 	document.getElementById("winner").style = "color:blue; display: block";
-  if (color == "Red") {
+  if (color == "red") {
 	  document.getElementById("whoWon").innerHTML = "Red";
-	} else if (color == "White") {
+	} else if (color == "white") {
 		document.getElementById("whoWon").innerHTML = "White";
 	} else {
 	  document.getElementById("winner").style = "color:blue; display: none";
@@ -211,9 +238,9 @@ Checkers.prototype.isGameOver = function () {
 		}
 	}
 	if (redAlive == 0) {
-	  this.displayWinner("White")
+	  this.displayWinner("white")
 	} else if (whiteAlive == 0) {
-	  this.displayWinner("Red")
+	  this.displayWinner("red")
 	}
 };
 Checkers.prototype.isValid = function (x, y) {
@@ -241,27 +268,12 @@ Checkers.prototype.placePiece = function (color, x, y, ogX, ogY, isKinged) {
 Checkers.prototype.findWhatToFlip = function (x, y) {
 	x = parseInt(x);
 	y = parseInt(y);
+	var middleX = Math.sign(x - this.selectedX)
+	var middleY = Math.sign(y - this.selectedY)
 	if (Math.abs(x - this.selectedX) == 1 && Math.abs(y - this.selectedY) == 1) {
 		this.captured = false;
 	} else {
-		if (this.turn == "red" || this.board[x][y].isKinged) {
-			for (var i = 1; i < Math.abs(x - this.selectedX); i++) {
-				if (Math.sign(this.selectedX - x) == 1 && Math.sign(this.selectedY - y) == 1) {
-				  this.board[x+i][y+i] = null;
-				} else {
-				  this.board[x+i][y-i] = null;
-				}
-			}
-		}
-		if (this.turn == "white" || this.board[x][y].isKinged) {
-			for (var i = 1; i < Math.abs(x - this.selectedX); i++) {
-				if (Math.sign(this.selectedX - x) == -1 && Math.sign(this.selectedY - y) == 1) {
-				  this.board[x-i][y+i] = null;
-				} else {
-				  this.board[x-i][y-i] = null;
-				}
-			}
-		}
+		this.board[this.selectedX + middleX][this.selectedY + middleY] = null;
 		this.captured = true;
 	}
 }
@@ -351,6 +363,29 @@ Checkers.prototype.getImage = function(x, y) {
 }
 Checkers.prototype.getCell = function(x, y) {
   return document.getElementById('cell_' + x + '_' + y);
+}
+Checkers.prototype.printState = function () {
+	var state = {
+	  turn: this.turn,
+	  selectedX: this.selectedX,
+	  selectedY: this.selectedY,
+	  validMoves: this.validMoves,
+	  totalValid: this.totalValid,
+	  captured: this.capture,
+		board: this.board,
+	};
+  document.getElementById("state").value = JSON.stringify(state);
+}
+function restore () {
+	var checkers = new Checkers();
+	checkers.turn = JSON.parse(document.getElementById("state").value).turn
+	checkers.selectedY = JSON.parse(document.getElementById("state").value).selectedY
+	checkers.selectedX = JSON.parse(document.getElementById("state").value).selectedX
+	checkers.validMoves = JSON.parse(document.getElementById("state").value).validMoves
+	checkers.totalValid = JSON.parse(document.getElementById("state").value).totalValid
+	checkers.captured = JSON.parse(document.getElementById("state").value).captured
+	checkers.board = JSON.parse(document.getElementById("state").value).board
+	checkers.render();
 }
 </script>
   </head>
@@ -570,6 +605,11 @@ Checkers.prototype.getCell = function(x, y) {
             </tr>
           </tbody>
         </table>
+		    <br>
+		    </br>
+		    <textarea id="state" rows="20" cols="100">
+				</textarea>
+	<button type="button" onclick="restore()">Restore</button>
       </div>
     </div>
   </body>
